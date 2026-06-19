@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Calendário – {{ month_name }} {{ ano }}{% endblock %}
+
+{% block content %}
+
+<!-- ══════════════════════════════════════════════════════════════
+     MONTH NAVIGATION
+══════════════════════════════════════════════════════════════ -->
+<div class="flex items-center justify-between mb-6 animate-fadeInUp">
+  <a href="/mes/{{ prev_ano }}/{{ prev_mes }}"
+     class="flex items-center gap-2 px-4 py-2 rounded-xl glass text-slate-300 hover:text-white hover:border-brand-500 border border-transparent transition-all text-sm font-medium">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+    </svg>
+    Mês anterior
+  </a>
+
+  <div class="text-center">
+    <h1 class="text-2xl font-bold text-white tracking-tight">
+      {{ month_name }} <span class="text-brand-400">{{ ano }}</span>
+    </h1>
+    <p class="text-xs text-slate-500 mt-0.5">Calendário de Vendas</p>
+  </div>
+
+  <a href="/mes/{{ next_ano }}/{{ next_mes }}"
+     class="flex items-center gap-2 px-4 py-2 rounded-xl glass text-slate-300 hover:text-white hover:border-brand-500 border border-transparent transition-all text-sm font-medium">
+    Próximo mês
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+    </svg>
+  </a>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     CALENDAR GRID
+══════════════════════════════════════════════════════════════ -->
+<div class="glass rounded-2xl shadow-card overflow-hidden animate-fadeInUp" style="animation-delay:0.05s">
+
+  <!-- Weekday Headers -->
+  <div class="grid grid-cols-7 border-b border-brand-800/40">
+    {% for wd in weekdays %}
+      <div class="py-3 text-center text-xs font-bold uppercase tracking-widest
+                  {% if loop.index >= 6 %}text-brand-400{% else %}text-slate-500{% endif %}">
+        {{ wd }}
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Weeks -->
+  <div>
+    {% for week in cal %}
+      <div class="grid grid-cols-7 border-b border-brand-900/60 last:border-0">
+        {% for day in week %}
+          {% if day == 0 %}
+            <!-- Empty cell -->
+            <div class="min-h-28 p-2 bg-dark-900/30 border-r border-brand-900/30 last:border-r-0"></div>
+          {% else %}
+            {% set day_str = '%s-%02d-%02d' % (ano, mes, day) %}
+            {% set info = dia_map.get(day_str, {}) %}
+            {% set is_today = day_str == today %}
+            {% set has_vendas = info.get('num_vendas', 0) > 0 %}
+            {% set is_weekend = loop.index >= 6 %}
+
+            <a href="/dia/{{ day_str }}"
+               class="group min-h-28 p-2.5 flex flex-col border-r border-brand-900/30 last:border-r-0 transition-all duration-200
+                      {% if is_today %}bg-brand-950/60 ring-1 ring-inset ring-brand-500/40{% elif is_weekend %}bg-dark-800/20{% else %}bg-transparent{% endif %}
+                      hover:bg-brand-900/20 hover:ring-1 hover:ring-inset hover:ring-brand-600/30">
+
+              <!-- Day number -->
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="w-7 h-7 flex items-center justify-center rounded-full text-sm font-bold
+                             {% if is_today %}bg-brand-500 text-white shadow-glow-sm{% elif is_weekend %}text-brand-400{% else %}text-slate-400{% endif %}
+                             group-hover:text-white transition-colors">
+                  {{ day }}
+                </span>
+                {% if is_today %}
+                  <span class="text-xs text-brand-400 font-semibold">hoje</span>
+                {% endif %}
+              </div>
+
+              <!-- Data -->
+              {% if has_vendas %}
+                <div class="flex-1 flex flex-col gap-1 mt-0.5">
+                  <div class="flex items-center gap-1">
+                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                    <span class="text-xs font-bold money-positive font-mono">
+                      R$ {{ "%.0f"|format(info.get('total_vendas', 0)) }}
+                    </span>
+                  </div>
+                  <span class="text-xs text-slate-600">
+                    {{ info.get('num_vendas', 0) }} venda{% if info.get('num_vendas', 0) != 1 %}s{% endif %}
+                  </span>
+                  {% if info.get('fechamento_caixa', 0) > 0 %}
+                    <div class="mt-auto pt-1 border-t border-brand-800/30">
+                      <span class="text-xs text-slate-500 font-mono">
+                        Fech: R$ {{ "%.0f"|format(info.get('fechamento_caixa', 0)) }}
+                      </span>
+                    </div>
+                  {% endif %}
+                </div>
+              {% else %}
+                <div class="flex-1 flex items-center justify-center">
+                  <span class="text-xs text-slate-700 group-hover:text-slate-500 transition-colors">—</span>
+                </div>
+              {% endif %}
+
+            </a>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     MONTHLY SUMMARY
+══════════════════════════════════════════════════════════════ -->
+{% set total_mes = namespace(val=0) %}
+{% set total_vendas_count = namespace(val=0) %}
+{% for key, info in dia_map.items() %}
+  {% set total_mes.val = total_mes.val + info.get('total_vendas', 0) %}
+  {% set total_vendas_count.val = total_vendas_count.val + info.get('num_vendas', 0) %}
+{% endfor %}
+
+<div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 animate-fadeInUp" style="animation-delay:0.1s">
+
+  <div class="glass rounded-2xl p-5 shadow-card text-center">
+    <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">Total do Mês</p>
+    <p class="text-3xl font-bold money-positive font-mono">
+      R$ {{ "%.2f"|format(total_mes.val) | replace('.', ',') }}
+    </p>
+  </div>
+
+  <div class="glass rounded-2xl p-5 shadow-card text-center">
+    <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">Vendas no Mês</p>
+    <p class="text-3xl font-bold text-white">{{ total_vendas_count.val }}</p>
+    <p class="text-xs text-slate-500 mt-1">lançamentos</p>
+  </div>
+
+  <div class="glass rounded-2xl p-5 shadow-card text-center">
+    <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">Dias com Vendas</p>
+    <p class="text-3xl font-bold text-white">
+      {% set dias_com_vendas = namespace(val=0) %}
+      {% for key, info in dia_map.items() %}
+        {% if info.get('num_vendas', 0) > 0 %}{% set dias_com_vendas.val = dias_com_vendas.val + 1 %}{% endif %}
+      {% endfor %}
+      {{ dias_com_vendas.val }}
+    </p>
+    <p class="text-xs text-slate-500 mt-1">dia(s)</p>
+  </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,367 @@
+{% extends "base.html" %}
+{% block title %}Vendas – {{ data_fmt }}{% endblock %}
+
+{% block content %}
+
+<!-- ══════════════════════════════════════════════════════════════
+     DATE NAVIGATION BAR
+══════════════════════════════════════════════════════════════ -->
+<div class="flex items-center justify-between mb-6 animate-fadeInUp">
+  <a href="/dia/{{ prev_day }}"
+     class="flex items-center gap-2 px-4 py-2 rounded-xl glass text-slate-300 hover:text-white hover:border-brand-500 border border-transparent transition-all text-sm font-medium">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+    </svg>
+    Dia anterior
+  </a>
+
+  <div class="text-center">
+    <h1 class="text-xl font-bold text-white">
+      {% if data == today %}
+        <span class="inline-block px-3 py-0.5 rounded-full text-xs font-semibold bg-brand-500/20 text-brand-300 border border-brand-500/30 mr-2 align-middle">HOJE</span>
+      {% endif %}
+      {{ data_fmt }}
+    </h1>
+    <p class="text-xs text-slate-500 mt-0.5">Vendas do Dia</p>
+  </div>
+
+  <a href="/dia/{{ next_day }}"
+     class="flex items-center gap-2 px-4 py-2 rounded-xl glass text-slate-300 hover:text-white hover:border-brand-500 border border-transparent transition-all text-sm font-medium">
+    Próximo dia
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+    </svg>
+  </a>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     METRICS PANEL
+══════════════════════════════════════════════════════════════ -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-fadeInUp">
+
+  <!-- Abertura do Caixa -->
+  <div class="metric-card glass rounded-2xl p-5 shadow-card">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Abertura</p>
+      <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+        </svg>
+      </div>
+    </div>
+    <p class="text-2xl font-bold text-white font-mono money-neutral">
+      R$ {{ "%.2f"|format(caixa.abertura_caixa) | replace('.', ',') }}
+    </p>
+    <!-- Edit abertura inline -->
+    <button onclick="toggleAberturaForm()" class="mt-2 text-xs text-brand-400 hover:text-brand-300 transition-colors flex items-center gap-1">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+      </svg>
+      Editar abertura
+    </button>
+    <div id="abertura-form" class="hidden mt-3">
+      <form action="/dia/{{ data }}/abertura" method="POST" class="flex gap-2">
+        <input type="text" name="abertura_caixa" id="input-abertura"
+               class="input-field rounded-lg px-3 py-1.5 text-sm flex-1 font-mono"
+               placeholder="R$ 0,00"
+               value="R$ {{ '%.2f'|format(caixa.abertura_caixa) | replace('.', ',') }}"
+               oninput="maskMoney(this)" />
+        <button type="submit" class="btn-primary text-white text-xs font-semibold px-3 py-1.5 rounded-lg">OK</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Total Vendido -->
+  <div class="metric-card glass rounded-2xl p-5 shadow-card">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Total Vendido</p>
+      <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+        </svg>
+      </div>
+    </div>
+    <p class="text-2xl font-bold money-positive font-mono">
+      R$ {{ "%.2f"|format(total_dia) | replace('.', ',') }}
+    </p>
+    <p class="mt-2 text-xs text-slate-500">{{ vendas|length }} venda(s) registrada(s)</p>
+  </div>
+
+  <!-- Fechamento -->
+  <div class="metric-card glass rounded-2xl p-5 shadow-card col-span-2 lg:col-span-1">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Fechamento</p>
+      <div class="w-8 h-8 rounded-lg bg-brand-500/10 border border-brand-500/20 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+      </div>
+    </div>
+    <p class="text-2xl font-bold text-white font-mono">
+      R$ {{ "%.2f"|format(caixa.fechamento_caixa) | replace('.', ',') }}
+    </p>
+    <p class="mt-2 text-xs text-slate-500">Abertura + Total vendido</p>
+  </div>
+
+  <!-- Subtotais por Forma de Pagamento -->
+  <div class="metric-card glass rounded-2xl p-5 shadow-card col-span-2 lg:col-span-1">
+    <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">Por Forma de Pag.</p>
+    <div class="grid grid-cols-5 gap-1">
+      {% for forma in formas %}
+        {% set val = subtotais[forma] %}
+        <div class="flex flex-col items-center gap-1">
+          <span class="badge badge-{{ forma|lower }}">{{ forma }}</span>
+          <span class="text-xs font-semibold font-mono {% if val > 0 %}text-white{% else %}text-slate-600{% endif %}">
+            {{ "%.0f"|format(val) }}
+          </span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     NEW SALE FORM
+══════════════════════════════════════════════════════════════ -->
+<div class="glass rounded-2xl shadow-card mb-6 animate-fadeInUp" style="animation-delay:0.05s">
+  <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-brand-800/40">
+    <h2 class="font-bold text-white flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      Registrar Nova Venda
+    </h2>
+    <span class="text-xs text-slate-500">{{ data_fmt }}</span>
+  </div>
+
+  <form id="form-venda" action="/dia/{{ data }}/venda/nova" method="POST" class="p-6">
+
+    <!-- Datalists -->
+    <datalist id="list-canais">{% for c in canais %}<option value="{{ c }}">{% endfor %}</datalist>
+    <datalist id="list-cidades">{% for c in cidades %}<option value="{{ c }}">{% endfor %}</datalist>
+    <datalist id="list-equipe">{% for e in equipe %}<option value="{{ e }}">{% endfor %}</datalist>
+
+    <!-- Row 1: Nº Pessoas | Canal | Cidade -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+
+      <div>
+        <label for="num_pessoas" class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Nº Pessoas</label>
+        <input type="number" id="num_pessoas" name="num_pessoas"
+               min="1" step="1" required
+               class="input-field w-full rounded-xl px-4 py-2.5 text-sm"
+               placeholder="1" value="1"
+               oninput="this.value = this.value.replace(/[^0-9]/g,'');" />
+      </div>
+
+      <div>
+        <label for="canal_venda" class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Canal de Venda</label>
+        <input type="text" id="canal_venda" name="canal_venda"
+               list="list-canais"
+               class="input-field w-full rounded-xl px-4 py-2.5 text-sm"
+               placeholder="Instagram, Google…" autocomplete="off" />
+      </div>
+
+      <div>
+        <label for="cidade_origem" class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Cidade de Origem</label>
+        <input type="text" id="cidade_origem" name="cidade_origem"
+               list="list-cidades"
+               class="input-field w-full rounded-xl px-4 py-2.5 text-sm"
+               placeholder="Gramado-RS…" autocomplete="off" />
+      </div>
+
+    </div>
+
+    <!-- Row 2: Fotógrafo | Vendedor | Valor | Forma de Pag. -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
+
+      <div>
+        <label for="fotografo" class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Fotógrafo</label>
+        <input type="text" id="fotografo" name="fotografo"
+               list="list-equipe"
+               class="input-field w-full rounded-xl px-4 py-2.5 text-sm"
+               placeholder="Nome…" autocomplete="off" />
+      </div>
+
+      <div>
+        <label for="vendedor" class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Vendedor</label>
+        <input type="text" id="vendedor" name="vendedor"
+               list="list-equipe"
+               class="input-field w-full rounded-xl px-4 py-2.5 text-sm"
+               placeholder="Nome…" autocomplete="off" />
+      </div>
+
+      <div>
+        <label for="valor_venda" class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Valor da Venda</label>
+        <input type="text" id="valor_venda" name="valor_venda"
+               required
+               class="input-field w-full rounded-xl px-4 py-2.5 text-sm font-mono"
+               placeholder="R$ 0,00"
+               oninput="maskMoney(this)" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Forma de Pagamento</label>
+        <div class="flex flex-wrap gap-1.5">
+          {% for forma in formas %}
+            <span class="radio-btn">
+              <input type="radio" id="fp-{{ forma }}" name="forma_pagamento" value="{{ forma }}"
+                     {% if loop.first %}checked{% endif %} />
+              <label for="fp-{{ forma }}">{{ forma }}</label>
+            </span>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Submit -->
+    <div class="flex justify-end">
+      <button type="submit" id="btn-nova-venda"
+              class="btn-primary text-white font-semibold text-sm px-8 py-2.5 rounded-xl flex items-center gap-2 shadow-glow-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+        </svg>
+        Lançar Venda
+      </button>
+    </div>
+
+  </form>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     SALES TABLE
+══════════════════════════════════════════════════════════════ -->
+<div class="glass rounded-2xl shadow-card animate-fadeInUp" style="animation-delay:0.10s">
+  <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-brand-800/40">
+    <h2 class="font-bold text-white flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+      </svg>
+      Vendas Lançadas
+    </h2>
+    <span class="text-xs text-slate-500">{{ vendas|length }} registro(s)</span>
+  </div>
+
+  {% if vendas %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-brand-800/30">
+          <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">#</th>
+          <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Pessoas</th>
+          <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Canal</th>
+          <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Cidade</th>
+          <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Fotógrafo</th>
+          <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Vendedor</th>
+          <th class="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Valor</th>
+          <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Pag.</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-brand-800/20">
+        {% for v in vendas %}
+        <tr>
+          <td class="px-4 py-3 text-slate-500 font-mono text-xs">{{ loop.index }}</td>
+          <td class="px-4 py-3 text-center">
+            <span class="inline-flex items-center gap-1 text-slate-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+              </svg>
+              {{ v.num_pessoas }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-slate-300">{{ v.canal_venda or '—' }}</td>
+          <td class="px-4 py-3 text-slate-300 text-xs">{{ v.cidade_origem or '—' }}</td>
+          <td class="px-4 py-3 text-slate-300 text-xs">{{ v.fotografo or '—' }}</td>
+          <td class="px-4 py-3 text-slate-300 text-xs">{{ v.vendedor or '—' }}</td>
+          <td class="px-4 py-3 text-right font-mono font-semibold money-positive">
+            R$ {{ "%.2f"|format(v.valor_venda) | replace('.', ',') }}
+          </td>
+          <td class="px-4 py-3 text-center">
+            <span class="badge badge-{{ v.forma_pagamento|lower }}">{{ v.forma_pagamento }}</span>
+          </td>
+          <td class="px-4 py-3 text-right">
+            <form action="/dia/{{ data }}/venda/{{ v.id }}/excluir" method="POST"
+                  onsubmit="return confirm('Excluir esta venda?');">
+              <button type="submit" class="btn-danger rounded-lg px-2.5 py-1 text-xs font-semibold">
+                Excluir
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="border-t-2 border-brand-700/40 bg-brand-950/30">
+          <td colspan="6" class="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wide">Total Geral</td>
+          <td class="px-4 py-3 text-right font-mono font-bold text-lg money-positive">
+            R$ {{ "%.2f"|format(total_dia) | replace('.', ',') }}
+          </td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  {% else %}
+  <div class="py-16 flex flex-col items-center gap-3 text-slate-600">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+    </svg>
+    <p class="text-sm font-medium">Nenhuma venda lançada neste dia.</p>
+    <p class="text-xs">Use o formulário acima para registrar a primeira venda.</p>
+  </div>
+  {% endif %}
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════════════ -->
+<script>
+  // ── Money mask ──
+  function maskMoney(el) {
+    let v = el.value.replace(/\D/g, '');
+    if (!v) { el.value = ''; return; }
+    v = (parseInt(v, 10) / 100).toFixed(2);
+    // format with dot as thousands separator and comma as decimal
+    let [intPart, decPart] = v.split('.');
+    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    el.value = 'R$ ' + intPart + ',' + decPart;
+  }
+
+  // ── Toggle abertura form ──
+  function toggleAberturaForm() {
+    const form = document.getElementById('abertura-form');
+    form.classList.toggle('hidden');
+    if (!form.classList.contains('hidden')) {
+      document.getElementById('input-abertura').focus();
+    }
+  }
+
+  // ── Prevent double-submit ──
+  document.getElementById('form-venda').addEventListener('submit', function(e) {
+    const btn = document.getElementById('btn-nova-venda');
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Salvando…';
+  });
+
+  // ── Auto-hide flash after 5s ──
+  setTimeout(() => {
+    document.querySelectorAll('.flash-success,.flash-error').forEach(el => {
+      el.style.transition = 'opacity 0.5s';
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 500);
+    });
+  }, 5000);
+</script>
+
+<style>
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .animate-spin { animation: spin 1s linear infinite; }
+</style>
+
+{% endblock %}

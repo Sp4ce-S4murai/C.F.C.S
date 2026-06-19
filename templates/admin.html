@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Administrativo{% endblock %}
+
+{% block content %}
+
+<div class="mb-6 animate-fadeInUp">
+  <h1 class="text-2xl font-bold text-white">Painel Administrativo</h1>
+  <p class="text-sm text-slate-500 mt-1">Gerencie as listas de auto-preenchimento do sistema.</p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     TABS
+══════════════════════════════════════════════════════════════ -->
+<div x-data="{ activeTab: 'canal' }">
+
+  <!-- Tab Bar -->
+  <div class="flex gap-2 mb-6 border-b border-brand-800/40 pb-0 animate-fadeInUp">
+    {% for tab, label, icon in [
+        ('canal',  'Canais de Venda',    'M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z'),
+        ('cidade', 'Cidades de Origem',  'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z'),
+        ('equipe', 'Equipe',             'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z')
+    ] %}
+      <button onclick="setTab('{{ tab }}')" id="tab-btn-{{ tab }}"
+              class="tab-btn flex items-center gap-2 px-5 py-3 text-sm font-semibold rounded-t-xl border-b-2 transition-all
+                     {% if loop.first %}text-brand-300 border-brand-500 bg-brand-950/40{% else %}text-slate-500 border-transparent hover:text-slate-300{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="{{ icon }}"/>
+        </svg>
+        {{ label }}
+      </button>
+    {% endfor %}
+  </div>
+
+  <!-- Tab Panels -->
+  {% for tipo, label, items in [
+      ('canal',  'Canais de Venda/Divulgação', canais),
+      ('cidade', 'Cidades de Origem',          cidades),
+      ('equipe', 'Equipe (Fotógrafos e Vendedores)', equipe)
+  ] %}
+    <div id="tab-{{ tipo }}"
+         class="tab-panel {% if not loop.first %}hidden{% endif %} animate-fadeInUp">
+
+      <div class="glass rounded-2xl shadow-card overflow-hidden">
+
+        <!-- Section header + Add form -->
+        <div class="px-6 pt-5 pb-4 border-b border-brand-800/40 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+          <div>
+            <h2 class="font-bold text-white text-lg">{{ label }}</h2>
+            <p class="text-xs text-slate-500 mt-0.5">{{ items|length }} item(ns) cadastrado(s)</p>
+          </div>
+
+          <!-- Add form -->
+          <form action="/admin/add" method="POST" class="flex gap-2 items-center">
+            <input type="hidden" name="tipo" value="{{ tipo }}" />
+            <input type="text" name="valor"
+                   class="input-field rounded-xl px-4 py-2 text-sm w-56"
+                   placeholder="Novo item…"
+                   required
+                   id="add-input-{{ tipo }}" />
+            <button type="submit"
+                    class="btn-primary text-white text-sm font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-glow-sm whitespace-nowrap">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+              </svg>
+              Adicionar
+            </button>
+          </form>
+        </div>
+
+        <!-- Items list -->
+        {% if items %}
+          <ul class="divide-y divide-brand-900/50">
+            {% for item in items %}
+              <li class="flex items-center justify-between px-6 py-3 group hover:bg-brand-900/10 transition-colors">
+                <div class="flex items-center gap-3">
+                  <div class="w-2 h-2 rounded-full
+                              {% if tipo == 'canal' %}bg-brand-500{% elif tipo == 'cidade' %}bg-emerald-500{% else %}bg-amber-500{% endif %}">
+                  </div>
+                  <span class="text-sm text-slate-200 font-medium">{{ item }}</span>
+                </div>
+
+                <!-- Delete button -->
+                <form action="/admin/delete" method="POST"
+                      onsubmit="return confirm('Remover \'{{ item }}\' da lista?');">
+                  <input type="hidden" name="tipo" value="{{ tipo }}" />
+                  <input type="hidden" name="valor" value="{{ item }}" />
+                  <button type="submit"
+                          class="btn-danger rounded-lg px-3 py-1 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    Remover
+                  </button>
+                </form>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="py-14 flex flex-col items-center gap-3 text-slate-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+            </svg>
+            <p class="text-sm font-medium">Nenhum item cadastrado.</p>
+            <p class="text-xs">Use o campo acima para adicionar o primeiro item.</p>
+          </div>
+        {% endif %}
+
+      </div>
+
+    </div>
+  {% endfor %}
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     TAB SWITCHING SCRIPT
+══════════════════════════════════════════════════════════════ -->
+<script>
+  function setTab(tab) {
+    // Hide all panels
+    document.querySelectorAll('.tab-panel').forEach(el => el.classList.add('hidden'));
+    // Deactivate all buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.remove('text-brand-300', 'border-brand-500', 'bg-brand-950/40');
+      btn.classList.add('text-slate-500', 'border-transparent');
+    });
+
+    // Show selected panel
+    document.getElementById('tab-' + tab).classList.remove('hidden');
+    // Activate button
+    const activeBtn = document.getElementById('tab-btn-' + tab);
+    activeBtn.classList.add('text-brand-300', 'border-brand-500', 'bg-brand-950/40');
+    activeBtn.classList.remove('text-slate-500', 'border-transparent');
+
+    // Focus the add input
+    const inp = document.getElementById('add-input-' + tab);
+    if (inp) inp.focus();
+  }
+</script>
+
+{% endblock %}

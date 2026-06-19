@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}C.F.C.S{% endblock %} | Cash Flow Control Solution</title>
+  <meta name="description" content="C.F.C.S – Sistema de controle de fluxo de caixa para equipe de vendas de estúdio fotográfico. Um oferecimento OCTO." />
+
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50:  '#f0f4ff',
+              100: '#dde6ff',
+              200: '#c2d0ff',
+              300: '#9db1ff',
+              400: '#7488ff',
+              500: '#4f62f5',
+              600: '#3a44e8',
+              700: '#3033cc',
+              800: '#2a2ca5',
+              900: '#282d82',
+              950: '#191b50',
+            },
+            dark: {
+              900: '#0d0f1a',
+              800: '#131628',
+              700: '#1a1e35',
+              600: '#222744',
+              500: '#2d3357',
+            },
+            accent: {
+              400: '#f97316',
+              500: '#ea580c',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          boxShadow: {
+            'glow': '0 0 20px rgba(79, 98, 245, 0.35)',
+            'glow-sm': '0 0 10px rgba(79, 98, 245, 0.25)',
+            'card': '0 4px 24px rgba(0,0,0,0.35)',
+          },
+          backgroundImage: {
+            'hero-gradient': 'linear-gradient(135deg, #131628 0%, #0d0f1a 60%, #1a1e35 100%)',
+            'card-gradient': 'linear-gradient(135deg, rgba(34,39,68,0.9) 0%, rgba(26,30,53,0.85) 100%)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      background: #0d0f1a;
+      color: #e2e8f0;
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* Glassmorphism cards */
+    .glass {
+      background: linear-gradient(135deg, rgba(34,39,68,0.85) 0%, rgba(26,30,53,0.80) 100%);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(79,98,245,0.18);
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #131628; }
+    ::-webkit-scrollbar-thumb { background: #3a44e8; border-radius: 3px; }
+
+    /* Animated gradient border on focus */
+    .input-field {
+      background: rgba(19,22,40,0.8);
+      border: 1px solid rgba(79,98,245,0.25);
+      color: #e2e8f0;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    .input-field:focus {
+      border-color: #4f62f5;
+      box-shadow: 0 0 0 3px rgba(79,98,245,0.15);
+    }
+    .input-field::placeholder { color: #4a5568; }
+
+    /* Forma pagamento radio buttons */
+    .radio-btn input[type="radio"] { display: none; }
+    .radio-btn label {
+      cursor: pointer;
+      padding: 0.35rem 0.75rem;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(79,98,245,0.25);
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      transition: all 0.18s;
+      background: rgba(19,22,40,0.6);
+      color: #94a3b8;
+    }
+    .radio-btn input[type="radio"]:checked + label {
+      background: #4f62f5;
+      border-color: #4f62f5;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(79,98,245,0.4);
+    }
+    .radio-btn label:hover { border-color: #4f62f5; color: #c7d2fe; }
+
+    /* Flash messages */
+    .flash-success {
+      background: rgba(16,185,129,0.15);
+      border: 1px solid rgba(16,185,129,0.35);
+      color: #6ee7b7;
+    }
+    .flash-error {
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(239,68,68,0.35);
+      color: #fca5a5;
+    }
+
+    /* Nav link active */
+    .nav-link { transition: color 0.2s, background 0.2s; }
+    .nav-link:hover { background: rgba(79,98,245,0.15); color: #818cf8; }
+    .nav-link.active { background: rgba(79,98,245,0.2); color: #818cf8; border-left: 3px solid #4f62f5; }
+
+    /* Metric cards */
+    .metric-card {
+      position: relative;
+      overflow: hidden;
+    }
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 60%, rgba(79,98,245,0.07));
+      pointer-events: none;
+    }
+
+    /* Table row hover */
+    tbody tr { transition: background 0.15s; }
+    tbody tr:hover { background: rgba(79,98,245,0.08); }
+
+    /* Money color helpers */
+    .money-positive { color: #34d399; }
+    .money-neutral { color: #93c5fd; }
+
+    /* Subtle animations */
+    @keyframes fadeInUp {
+      from { opacity:0; transform:translateY(10px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .animate-fadeInUp { animation: fadeInUp 0.35s ease both; }
+
+    /* Button styles */
+    .btn-primary {
+      background: linear-gradient(135deg, #4f62f5, #3033cc);
+      transition: opacity 0.2s, box-shadow 0.2s, transform 0.15s;
+    }
+    .btn-primary:hover {
+      opacity: 0.9;
+      box-shadow: 0 0 16px rgba(79,98,245,0.5);
+      transform: translateY(-1px);
+    }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-danger {
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: #fca5a5;
+      transition: all 0.2s;
+    }
+    .btn-danger:hover {
+      background: rgba(239,68,68,0.3);
+      border-color: rgba(239,68,68,0.6);
+    }
+
+    /* Datalist custom arrow */
+    input[list]::-webkit-calendar-picker-indicator { filter: invert(0.6); cursor: pointer; }
+
+    /* Pill badge */
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.15rem 0.55rem;
+      border-radius: 9999px;
+    }
+    .badge-din  { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+    .badge-cre  { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
+    .badge-deb  { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+    .badge-pix  { background: rgba(20,184,166,0.15); color: #5eead4; border: 1px solid rgba(20,184,166,0.3); }
+    .badge-vch  { background: rgba(249,115,22,0.15); color: #fdba74; border: 1px solid rgba(249,115,22,0.3); }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+  <!-- ── Top Navigation Bar ── -->
+  <header class="glass sticky top-0 z-50 border-b border-brand-800/40 shadow-card">
+    <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
+
+      <!-- Logo -->
+      <a href="/" class="flex items-center gap-3 group">
+        <div class="w-9 h-9 rounded-xl btn-primary flex items-center justify-center shadow-glow-sm group-hover:shadow-glow transition-shadow">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="leading-tight">
+          <span class="font-bold text-white text-sm tracking-wider">C.F.C.S</span>
+          <span class="block text-xs text-slate-500 font-medium">by OCTO</span>
+        </div>
+      </a>
+
+      <!-- Nav links -->
+      <nav class="flex items-center gap-1">
+        <a id="nav-diario" href="/" class="nav-link flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-300
+           {% if request.endpoint in ('diario','index') %}active{% endif %}">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          Vendas do Dia
+        </a>
+        <a id="nav-mes" href="/mes" class="nav-link flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-300
+           {% if request.endpoint == 'mes' %}active{% endif %}">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          Calendário
+        </a>
+        <a id="nav-admin" href="/admin" class="nav-link flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-300
+           {% if request.endpoint == 'admin' %}active{% endif %}">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Administrativo
+        </a>
+      </nav>
+
+    </div>
+  </header>
+
+  <!-- ── Flash Messages ── -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="max-w-7xl mx-auto w-full px-4 mt-4 space-y-2 animate-fadeInUp">
+        {% for category, message in messages %}
+          <div class="flash-{{ category }} rounded-xl px-4 py-3 text-sm font-medium flex items-center gap-2">
+            {% if category == 'success' %}
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            {% else %}
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            {% endif %}
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- ── Page Content ── -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer class="border-t border-brand-800/30 mt-8">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between text-xs text-slate-600">
+      <span>C.F.C.S &mdash; Cash Flow Control Solution</span>
+      <span class="font-semibold tracking-widest text-brand-700">OCTO</span>
+    </div>
+  </footer>
+
+</body>
+</html>
