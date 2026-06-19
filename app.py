@@ -1,8 +1,9 @@
 import re
 from datetime import date, timedelta, datetime
 import calendar
+from urllib.parse import quote
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
-from database import get_connection, init_db, seed_defaults
+from database import get_connection, init_db, seed_defaults, get_whatsapp_numero, set_whatsapp_numero
 
 app = Flask(__name__)
 app.secret_key = "cfcs-octo-secret-2024"
@@ -16,12 +17,18 @@ def parse_money(value: str) -> float:
     """Convert masked monetary string like 'R$ 1.234,56' to float."""
     if not value:
         return 0.0
-    # Remove currency symbol, dots used as thousands-sep, replace comma with dot
     cleaned = re.sub(r"[R$\s.]", "", value).replace(",", ".")
     try:
         return float(cleaned)
     except ValueError:
         return 0.0
+
+
+def fmt_brl(value: float) -> str:
+    """Format float as Brazilian currency string (R$ 1.234,56)."""
+    s = f"{value:,.2f}"
+    s = s.replace(",", "X").replace(".", ",").replace("X", ".")
+    return f"R$ {s}"
 
 
 def get_config(tipo: str) -> list[str]:
@@ -42,7 +49,6 @@ def get_or_create_caixa(data_str: str) -> dict:
         if row:
             return dict(row)
 
-        # Look for the most-recent previous fechamento to use as abertura
         prev = conn.execute(
             "SELECT fechamento_caixa FROM caixa_diario WHERE data < ? ORDER BY data DESC LIMIT 1",
             (data_str,),
@@ -100,6 +106,86 @@ def get_vendas_do_dia(data_str: str) -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def build_whatsapp_message(data_str: str, caixa: dict, vendas: list, subtotais: dict) -> str:
+    """Build a formatted WhatsApp message with the daily sales report."""
+    d = datetime.strptime(data_str, "%Y-%m-%d")
+    data_fmt = d.strftime("%d/%m/%Y")
+    total = sum(v["valor_venda"] for v in vendas)
+
+    forma_labels = {
+        "DIN": "💵 Dinheiro",
+        "PIX": "📱 PIX",
+        "CRE": "💳 Crédito",
+        "DEB": "🏧 Débito",
+        "VCH": "🎫 Voucher",
+    }
+
+    lines = [
+        "*╔══════════════════════════╗*",
+        "*║   RELATÓRIO DE CAIXA    ║*",
+        "*╚══════════════════════════╝*",
+        "",
+        f"📅 *DATA:* {data_fmt}",
+        f"🏢 *Estúdio Fotográfico · OCTO*",
+        "",
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        "*💰 RESUMO DO CAIXA*",
+        f"  • Abertura:     *{fmt_brl(caixa['abertura_caixa'])}*",
+        f"  • Total vendas: *{fmt_brl(total)}*",
+        f"  • Fechamento:   *{fmt_brl(caixa['fechamento_caixa'])}*",
+        "",
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        "*💳 FORMAS DE PAGAMENTO*",
+    ]
+
+    for forma in ["DIN", "PIX", "CRE", "DEB", "VCH"]:
+        val = subtotais.get(forma, 0.0)
+        if val > 0:
+            label = forma_labels.get(forma, forma)
+            lines.append(f"  {label}: *{fmt_brl(val)}*")
+
+    if not any(subtotais.get(f, 0) > 0 for f in subtotais):
+        lines.append("  _Nenhum pagamento registrado_")
+
+    if vendas:
+        lines += [
+            "",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            f"*🛒 VENDAS — {len(vendas)} lançamento{'s' if len(vendas) != 1 else ''}*",
+        ]
+        for i, v in enumerate(vendas, 1):
+            lines.append("")
+            lines.append(
+                f"*#{i}* — {fmt_brl(v['valor_venda'])} | "
+                f"{v['forma_pagamento']} | {v['num_pessoas']} pess."
+            )
+            parts = []
+            if v.get("cidade_origem"):
+                parts.append(f"📍 {v['cidade_origem']}")
+            if v.get("canal_venda"):
+                parts.append(f"📢 {v['canal_venda']}")
+            if v.get("fotografo"):
+                parts.append(f"📷 {v['fotografo']}")
+            if v.get("vendedor"):
+                parts.append(f"🤝 {v['vendedor']}")
+            if parts:
+                lines.append("   " + " · ".join(parts))
+    else:
+        lines += [
+            "",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "_Nenhuma venda registrada neste dia._",
+        ]
+
+    lines += [
+        "",
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        "_C.F.C.S · by OCTO_",
+    ]
+
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # Routes – Diário
 # ---------------------------------------------------------------------------
@@ -122,13 +208,13 @@ def diario(data):
     subtotais = get_subtotais(data)
     total_dia = sum(v["valor_venda"] for v in vendas)
     recalc_fechamento(data)
-    caixa = get_or_create_caixa(data)  # refresh after recalc
+    caixa = get_or_create_caixa(data)
 
     canais = get_config("canal")
     cidades = get_config("cidade")
     equipe = get_config("equipe")
+    whatsapp_numero = get_whatsapp_numero()
 
-    # Navigation helpers
     d = datetime.strptime(data, "%Y-%m-%d").date()
     prev_day = (d - timedelta(days=1)).isoformat()
     next_day = (d + timedelta(days=1)).isoformat()
@@ -149,6 +235,7 @@ def diario(data):
         next_day=next_day,
         today=today,
         formas=["DIN", "CRE", "DEB", "PIX", "VCH"],
+        whatsapp_numero=whatsapp_numero,
     )
 
 
@@ -173,7 +260,6 @@ def nova_venda(data):
         flash("Valor da venda deve ser maior que zero.", "error")
         return redirect(url_for("diario", data=data))
 
-    # Ensure caixa exists for the day
     get_or_create_caixa(data)
 
     with get_connection() as conn:
@@ -224,6 +310,32 @@ def set_abertura(data):
     return redirect(url_for("diario", data=data))
 
 
+@app.route("/dia/<data>/whatsapp")
+def whatsapp_enviar(data):
+    """Generate WhatsApp message with daily report and redirect to wa.me."""
+    try:
+        datetime.strptime(data, "%Y-%m-%d")
+    except ValueError:
+        flash("Data inválida.", "error")
+        return redirect(url_for("index"))
+
+    numero = get_whatsapp_numero()
+    if not numero:
+        flash("Configure o número do WhatsApp no Painel Administrativo → aba SISTEMA.", "error")
+        return redirect(url_for("diario", data=data))
+
+    caixa = get_or_create_caixa(data)
+    vendas = get_vendas_do_dia(data)
+    subtotais = get_subtotais(data)
+
+    message = build_whatsapp_message(data, caixa, vendas, subtotais)
+    encoded = quote(message)
+    numero_clean = "".join(filter(str.isdigit, numero))
+    wa_url = f"https://wa.me/{numero_clean}?text={encoded}"
+
+    return redirect(wa_url)
+
+
 # ---------------------------------------------------------------------------
 # Routes – Calendário Mensal
 # ---------------------------------------------------------------------------
@@ -237,13 +349,11 @@ def mes(ano=None, mes=None):
     if mes is None:
         mes = today.month
 
-    # Clamp
     mes = max(1, min(12, mes))
 
     cal = calendar.monthcalendar(ano, mes)
     month_name = calendar.month_name[mes]
 
-    # Get all fechamento_caixa for the month for display
     first_day = date(ano, mes, 1).isoformat()
     last_day = date(ano, mes, calendar.monthrange(ano, mes)[1]).isoformat()
 
@@ -263,7 +373,6 @@ def mes(ano=None, mes=None):
 
     dia_map = {r["data"]: dict(r) for r in rows}
 
-    # Also get totals for days that have sales but no caixa entry
     with get_connection() as conn:
         vrows = conn.execute(
             """SELECT data_venda as data, COALESCE(SUM(valor_venda),0) as total_vendas, COUNT(*) as num_vendas
@@ -283,7 +392,6 @@ def mes(ano=None, mes=None):
                 "num_vendas": r["num_vendas"],
             }
 
-    # Prev / next month
     if mes == 1:
         prev_ano, prev_mes = ano - 1, 12
     else:
@@ -306,7 +414,7 @@ def mes(ano=None, mes=None):
         prev_mes=prev_mes,
         next_ano=next_ano,
         next_mes=next_mes,
-        weekdays=["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
+        weekdays=["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"],
     )
 
 
@@ -319,7 +427,14 @@ def admin():
     canais = get_config("canal")
     cidades = get_config("cidade")
     equipe = get_config("equipe")
-    return render_template("admin.html", canais=canais, cidades=cidades, equipe=equipe)
+    whatsapp_numero = get_whatsapp_numero() or ""
+    return render_template(
+        "admin.html",
+        canais=canais,
+        cidades=cidades,
+        equipe=equipe,
+        whatsapp_numero=whatsapp_numero,
+    )
 
 
 @app.route("/admin/add", methods=["POST"])
@@ -361,8 +476,20 @@ def admin_delete():
     return redirect(url_for("admin"))
 
 
+@app.route("/admin/whatsapp", methods=["POST"])
+def admin_whatsapp():
+    """Save or clear the WhatsApp phone number."""
+    numero = request.form.get("whatsapp_numero", "").strip()
+    set_whatsapp_numero(numero)
+    if numero:
+        flash(f"Número do WhatsApp salvo: {numero}", "success")
+    else:
+        flash("Número do WhatsApp removido.", "success")
+    return redirect(url_for("admin"))
+
+
 # ---------------------------------------------------------------------------
-# API – autocomplete JSON endpoints (optional, used by datalists via fetch)
+# API – autocomplete JSON endpoints
 # ---------------------------------------------------------------------------
 
 @app.route("/api/config/<tipo>")
@@ -381,10 +508,10 @@ if __name__ == "__main__":
     init_db()
     seed_defaults()
     print("\n" + "=" * 60)
-    print("  C.F.C.S  –  Cash Flow Control Solution")
-    print("  Um oferecimento OCTO")
+    print("  C.F.C.S  //  CASH FLOW CONTROL SYSTEM")
+    print("  BY OCTO")
     print("=" * 60)
-    print("  Servidor rodando em: http://127.0.0.1:5000")
-    print("  Pressione CTRL+C para encerrar.")
+    print("  SYSTEM ONLINE  >>  http://127.0.0.1:5000")
+    print("  CTRL+C TO TERMINATE")
     print("=" * 60 + "\n")
     app.run(debug=False, host="127.0.0.1", port=5000)

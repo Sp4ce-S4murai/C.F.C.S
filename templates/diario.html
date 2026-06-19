@@ -1,119 +1,99 @@
 {% extends "base.html" %}
-{% block title %}Vendas – {{ data_fmt }}{% endblock %}
+{% block title %}DIÁRIO // {{ data_fmt }}{% endblock %}
 
 {% block content %}
 
-<!-- ══════════════════════════════════════════════════════════════
-     DATE NAVIGATION BAR
-══════════════════════════════════════════════════════════════ -->
-<div class="flex items-center justify-between mb-6 animate-fadeInUp">
-  <a href="/dia/{{ prev_day }}"
-     class="flex items-center gap-2 px-4 py-2 rounded-xl glass text-slate-300 hover:text-white hover:border-brand-500 border border-transparent transition-all text-sm font-medium">
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+<!-- ══════════════════════════════════════════════════════════
+     DATE NAVIGATION
+══════════════════════════════════════════════════════════ -->
+<div class="fade-in" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; gap: 1rem;">
+
+  <a href="/dia/{{ prev_day }}" class="btn btn-ghost" style="font-size: 0.65rem;">
+    <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+      <path stroke-linecap="square" stroke-linejoin="miter" d="M15 19l-7-7 7-7"/>
     </svg>
-    Dia anterior
+    ANTERIOR
   </a>
 
-  <div class="text-center">
-    <h1 class="text-xl font-bold text-white">
+  <div style="text-align: center; flex: 1;">
+    <div class="sys-label" style="margin-bottom: 0.3rem; justify-content: center; display: flex; align-items: center; gap: 0.5rem;">
+      SISTEMA DE CAIXA
       {% if data == today %}
-        <span class="inline-block px-3 py-0.5 rounded-full text-xs font-semibold bg-brand-500/20 text-brand-300 border border-brand-500/30 mr-2 align-middle">HOJE</span>
+        <span style="border: 1px solid var(--neon); padding: 0.05rem 0.4rem; font-size: 0.55rem; background: rgba(0,255,102,0.08);">● HOJE</span>
+      {% else %}
+        <span style="border: 1px solid var(--warn); color: var(--warn); padding: 0.05rem 0.4rem; font-size: 0.55rem; background: rgba(255,184,0,0.06);">⚡ RETROATIVO</span>
       {% endif %}
-      {{ data_fmt }}
-    </h1>
-    <p class="text-xs text-slate-500 mt-0.5">Vendas do Dia</p>
+    </div>
+    <div class="display" style="font-size: 2.4rem; letter-spacing: 0.06em; color: var(--txt); line-height: 1;">{{ data_fmt }}</div>
+    <div class="sys-label-dim" style="margin-top: 0.2rem;">{{ data }}</div>
   </div>
 
-  <a href="/dia/{{ next_day }}"
-     class="flex items-center gap-2 px-4 py-2 rounded-xl glass text-slate-300 hover:text-white hover:border-brand-500 border border-transparent transition-all text-sm font-medium">
-    Próximo dia
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+  <a href="/dia/{{ next_day }}" class="btn btn-ghost" style="font-size: 0.65rem;">
+    PRÓXIMO
+    <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+      <path stroke-linecap="square" stroke-linejoin="miter" d="M9 5l7 7-7 7"/>
     </svg>
   </a>
+
 </div>
 
 
-<!-- ══════════════════════════════════════════════════════════════
-     METRICS PANEL
-══════════════════════════════════════════════════════════════ -->
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-fadeInUp">
+<!-- ══════════════════════════════════════════════════════════
+     METRICS GRID
+══════════════════════════════════════════════════════════ -->
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-bottom: 1px; background: var(--bd);" class="fade-in">
 
-  <!-- Abertura do Caixa -->
-  <div class="metric-card glass rounded-2xl p-5 shadow-card">
-    <div class="flex items-center justify-between mb-3">
-      <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Abertura</p>
-      <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
-        </svg>
-      </div>
-    </div>
-    <p class="text-2xl font-bold text-white font-mono money-neutral">
+  <!-- ABERTURA -->
+  <div class="card bracketed" style="padding: 1.25rem 1.25rem 1rem; border-left: 3px solid var(--warn); background: var(--s1);">
+    <div class="sys-label-dim" style="margin-bottom: 0.6rem;">// ABERTURA //</div>
+    <div class="metric-value money-warn" style="font-size: 2rem;">
       R$ {{ "%.2f"|format(caixa.abertura_caixa) | replace('.', ',') }}
-    </p>
-    <!-- Edit abertura inline -->
-    <button onclick="toggleAberturaForm()" class="mt-2 text-xs text-brand-400 hover:text-brand-300 transition-colors flex items-center gap-1">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-      </svg>
-      Editar abertura
+    </div>
+    <button onclick="toggleAberturaForm()" style="margin-top: 0.6rem; background: transparent; border: none; color: var(--warn); font-family: 'IBM Plex Mono'; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; padding: 0; opacity: 0.7;">
+      [EDITAR ABERTURA]
     </button>
-    <div id="abertura-form" class="hidden mt-3">
-      <form action="/dia/{{ data }}/abertura" method="POST" class="flex gap-2">
+    <div id="abertura-form" style="display: none; margin-top: 0.6rem;">
+      <form action="/dia/{{ data }}/abertura" method="POST" style="display: flex; gap: 0.4rem;">
         <input type="text" name="abertura_caixa" id="input-abertura"
-               class="input-field rounded-lg px-3 py-1.5 text-sm flex-1 font-mono"
+               class="input-field" style="font-size: 0.78rem; padding: 0.4rem 0.6rem; flex: 1;"
                placeholder="R$ 0,00"
                value="R$ {{ '%.2f'|format(caixa.abertura_caixa) | replace('.', ',') }}"
                oninput="maskMoney(this)" />
-        <button type="submit" class="btn-primary text-white text-xs font-semibold px-3 py-1.5 rounded-lg">OK</button>
+        <button type="submit" class="btn btn-ghost-warn" style="padding: 0.4rem 0.75rem; font-size: 0.65rem;">OK</button>
       </form>
     </div>
   </div>
 
-  <!-- Total Vendido -->
-  <div class="metric-card glass rounded-2xl p-5 shadow-card">
-    <div class="flex items-center justify-between mb-3">
-      <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Total Vendido</p>
-      <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-        </svg>
-      </div>
-    </div>
-    <p class="text-2xl font-bold money-positive font-mono">
+  <!-- TOTAL VENDIDO -->
+  <div class="card bracketed" style="padding: 1.25rem 1.25rem 1rem; border-left: 3px solid var(--neon); background: var(--s1);">
+    <div class="sys-label" style="margin-bottom: 0.6rem;">// TOTAL VENDIDO //</div>
+    <div class="metric-value money" style="font-size: 2rem;">
       R$ {{ "%.2f"|format(total_dia) | replace('.', ',') }}
-    </p>
-    <p class="mt-2 text-xs text-slate-500">{{ vendas|length }} venda(s) registrada(s)</p>
-  </div>
-
-  <!-- Fechamento -->
-  <div class="metric-card glass rounded-2xl p-5 shadow-card col-span-2 lg:col-span-1">
-    <div class="flex items-center justify-between mb-3">
-      <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Fechamento</p>
-      <div class="w-8 h-8 rounded-lg bg-brand-500/10 border border-brand-500/20 flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-        </svg>
-      </div>
     </div>
-    <p class="text-2xl font-bold text-white font-mono">
-      R$ {{ "%.2f"|format(caixa.fechamento_caixa) | replace('.', ',') }}
-    </p>
-    <p class="mt-2 text-xs text-slate-500">Abertura + Total vendido</p>
+    <div class="sys-label-dim" style="margin-top: 0.6rem;">
+      {{ vendas|length }} VENDA{% if vendas|length != 1 %}S{% endif %} REGISTRADA{% if vendas|length != 1 %}S{% endif %}
+    </div>
   </div>
 
-  <!-- Subtotais por Forma de Pagamento -->
-  <div class="metric-card glass rounded-2xl p-5 shadow-card col-span-2 lg:col-span-1">
-    <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">Por Forma de Pag.</p>
-    <div class="grid grid-cols-5 gap-1">
+  <!-- FECHAMENTO -->
+  <div class="card bracketed" style="padding: 1.25rem 1.25rem 1rem; border-left: 3px solid var(--acid); background: var(--s1);">
+    <div class="sys-label-dim" style="margin-bottom: 0.6rem; color: var(--acid); opacity: 0.8;">// FECHAMENTO //</div>
+    <div class="metric-value money-acid" style="font-size: 2rem;">
+      R$ {{ "%.2f"|format(caixa.fechamento_caixa) | replace('.', ',') }}
+    </div>
+    <div class="sys-label-dim" style="margin-top: 0.6rem;">ABERTURA + VENDAS</div>
+  </div>
+
+  <!-- SUBTOTAIS -->
+  <div class="card" style="padding: 1.25rem 1.25rem 1rem; border-left: 3px solid var(--bd2); background: var(--s1);">
+    <div class="sys-label-dim" style="margin-bottom: 0.75rem;">// POR FORMA DE PAG. //</div>
+    <div style="display: flex; flex-direction: column; gap: 0.3rem;">
       {% for forma in formas %}
         {% set val = subtotais[forma] %}
-        <div class="flex flex-col items-center gap-1">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.15rem 0; border-bottom: 1px solid var(--muted);">
           <span class="badge badge-{{ forma|lower }}">{{ forma }}</span>
-          <span class="text-xs font-semibold font-mono {% if val > 0 %}text-white{% else %}text-slate-600{% endif %}">
-            {{ "%.0f"|format(val) }}
+          <span class="money-dim" style="font-size: 0.72rem; {% if val > 0 %}color: var(--txt);{% endif %}">
+            R$ {{ "%.2f"|format(val) | replace('.', ',') }}
           </span>
         </div>
       {% endfor %}
@@ -122,89 +102,131 @@
 
 </div>
 
+<!-- WhatsApp + calendar link bar -->
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.65rem 1rem; background: var(--s2); border: 1px solid var(--bd); border-top: none; margin-bottom: 1.5rem;">
+  <div class="sys-label-dim">
+    RELATÓRIO GERADO AUTOMATICAMENTE · PERSISTÊNCIA DE CAIXA ATIVA
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0;">
+    <a href="/mes" class="btn btn-ghost" style="padding: 0.35rem 0.85rem; font-size: 0.6rem;">◈ VER CALENDÁRIO</a>
+    {% if whatsapp_numero %}
+      <a href="/dia/{{ data }}/whatsapp" target="_blank" class="btn btn-wa" style="padding: 0.35rem 0.85rem; font-size: 0.6rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;flex-shrink:0;" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+        </svg>
+        ENVIAR RELATÓRIO
+      </a>
+    {% else %}
+      <a href="/admin" class="btn btn-ghost" style="padding: 0.35rem 0.85rem; font-size: 0.6rem; border-color: var(--muted); color: var(--dim);">
+        ⚠ CONF. WHATSAPP
+      </a>
+    {% endif %}
+  </div>
+</div>
 
-<!-- ══════════════════════════════════════════════════════════════
+
+<!-- ══════════════════════════════════════════════════════════
+     LOCK OVERLAY (shown when data != today, until unlocked)
+══════════════════════════════════════════════════════════ -->
+<div id="lock-overlay" style="display: none; margin-bottom: 1.5rem;">
+  <div style="background: rgba(5,5,5,0.97); border: 2px solid var(--warn); padding: 2.5rem; text-align: center; position: relative; overflow: hidden;">
+    <!-- Diagonal stripe bg -->
+    <div style="position: absolute; inset: 0; background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,184,0,0.025) 10px, rgba(255,184,0,0.025) 20px); pointer-events: none;"></div>
+
+    <div class="display" style="font-size: 4rem; letter-spacing: 0.12em; color: var(--warn); line-height: 1; position: relative;">
+      ⚠ ACESSO BLOQUEADO
+    </div>
+    <div style="font-family: 'IBM Plex Mono'; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 0.75rem auto 1.75rem; max-width: 480px; line-height: 1.7; position: relative;">
+      DATA FORA DO DIA CORRENTE<br/>
+      LANÇAMENTOS AQUI MODIFICAM REGISTROS HISTÓRICOS<br/>
+      CONFIRME SUA INTENÇÃO PARA DESTRAVAR O FORMULÁRIO
+    </div>
+    <button onclick="unlockForm()"
+            class="btn btn-ghost-warn"
+            style="font-size: 0.78rem; padding: 0.85rem 2.5rem; position: relative; letter-spacing: 0.18em;">
+      [ DESTRAVAR FORMULÁRIO ]
+    </button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
      NEW SALE FORM
-══════════════════════════════════════════════════════════════ -->
-<div class="glass rounded-2xl shadow-card mb-6 animate-fadeInUp" style="animation-delay:0.05s">
-  <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-brand-800/40">
-    <h2 class="font-bold text-white flex items-center gap-2">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-      </svg>
-      Registrar Nova Venda
-    </h2>
-    <span class="text-xs text-slate-500">{{ data_fmt }}</span>
+══════════════════════════════════════════════════════════ -->
+<div id="sale-form-section" style="display: none; margin-bottom: 1.5rem;" class="card">
+
+  <!-- Retroactive warning -->
+  <div id="retro-warning" style="display: none; padding: 0.5rem 1.25rem; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; font-family: 'IBM Plex Mono'; color: var(--warn); background: rgba(255,184,0,0.05); border-bottom: 1px solid rgba(255,184,0,0.2);">
+    ⚡ MODO RETROATIVO ATIVO — EDITANDO REGISTROS DE: {{ data_fmt }}
   </div>
 
-  <form id="form-venda" action="/dia/{{ data }}/venda/nova" method="POST" class="p-6">
+  <!-- Section header -->
+  <div class="section-header">
+    <span class="display" style="font-size: 1.1rem; letter-spacing: 0.08em; color: var(--txt);">LANÇAR NOVA VENDA</span>
+    <span class="sys-label-dim" style="margin-left: auto;">{{ data_fmt }}</span>
+  </div>
+
+  <form id="form-venda" action="/dia/{{ data }}/venda/nova" method="POST" style="padding: 1.25rem;">
 
     <!-- Datalists -->
     <datalist id="list-canais">{% for c in canais %}<option value="{{ c }}">{% endfor %}</datalist>
     <datalist id="list-cidades">{% for c in cidades %}<option value="{{ c }}">{% endfor %}</datalist>
     <datalist id="list-equipe">{% for e in equipe %}<option value="{{ e }}">{% endfor %}</datalist>
 
-    <!-- Row 1: Nº Pessoas | Canal | Cidade -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <!-- Row 1 -->
+    <div style="display: grid; grid-template-columns: 100px 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
 
       <div>
-        <label for="num_pessoas" class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Nº Pessoas</label>
+        <label for="num_pessoas" class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">Nº PESS.</label>
         <input type="number" id="num_pessoas" name="num_pessoas"
-               min="1" step="1" required
-               class="input-field w-full rounded-xl px-4 py-2.5 text-sm"
-               placeholder="1" value="1"
+               min="1" step="1" required value="1"
+               class="input-field"
                oninput="this.value = this.value.replace(/[^0-9]/g,'');" />
       </div>
 
       <div>
-        <label for="canal_venda" class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Canal de Venda</label>
+        <label for="canal_venda" class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">CANAL / DIVULGAÇÃO</label>
         <input type="text" id="canal_venda" name="canal_venda"
-               list="list-canais"
-               class="input-field w-full rounded-xl px-4 py-2.5 text-sm"
+               list="list-canais" class="input-field"
                placeholder="Instagram, Google…" autocomplete="off" />
       </div>
 
       <div>
-        <label for="cidade_origem" class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Cidade de Origem</label>
+        <label for="cidade_origem" class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">CIDADE DE ORIGEM</label>
         <input type="text" id="cidade_origem" name="cidade_origem"
-               list="list-cidades"
-               class="input-field w-full rounded-xl px-4 py-2.5 text-sm"
+               list="list-cidades" class="input-field"
                placeholder="Gramado-RS…" autocomplete="off" />
       </div>
-
     </div>
 
-    <!-- Row 2: Fotógrafo | Vendedor | Valor | Forma de Pag. -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
+    <!-- Row 2 -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
 
       <div>
-        <label for="fotografo" class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Fotógrafo</label>
+        <label for="fotografo" class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">FOTÓGRAFO</label>
         <input type="text" id="fotografo" name="fotografo"
-               list="list-equipe"
-               class="input-field w-full rounded-xl px-4 py-2.5 text-sm"
+               list="list-equipe" class="input-field"
                placeholder="Nome…" autocomplete="off" />
       </div>
 
       <div>
-        <label for="vendedor" class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Vendedor</label>
+        <label for="vendedor" class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">VENDEDOR</label>
         <input type="text" id="vendedor" name="vendedor"
-               list="list-equipe"
-               class="input-field w-full rounded-xl px-4 py-2.5 text-sm"
+               list="list-equipe" class="input-field"
                placeholder="Nome…" autocomplete="off" />
       </div>
 
       <div>
-        <label for="valor_venda" class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Valor da Venda</label>
+        <label for="valor_venda" class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">VALOR DA VENDA</label>
         <input type="text" id="valor_venda" name="valor_venda"
-               required
-               class="input-field w-full rounded-xl px-4 py-2.5 text-sm font-mono"
+               required class="input-field money"
                placeholder="R$ 0,00"
                oninput="maskMoney(this)" />
       </div>
 
       <div>
-        <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Forma de Pagamento</label>
-        <div class="flex flex-wrap gap-1.5">
+        <label class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">FORMA DE PAGAMENTO</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.3rem; padding-top: 0.1rem;">
           {% for forma in formas %}
             <span class="radio-btn">
               <input type="radio" id="fp-{{ forma }}" name="forma_pagamento" value="{{ forma }}"
@@ -217,14 +239,10 @@
 
     </div>
 
-    <!-- Submit -->
-    <div class="flex justify-end">
-      <button type="submit" id="btn-nova-venda"
-              class="btn-primary text-white font-semibold text-sm px-8 py-2.5 rounded-xl flex items-center gap-2 shadow-glow-sm">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-        </svg>
-        Lançar Venda
+    <!-- Submit row -->
+    <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--bd); padding-top: 1rem;">
+      <button type="submit" id="btn-nova-venda" class="btn btn-primary" style="font-size: 0.78rem; padding: 0.7rem 2rem;">
+        + LANÇAR VENDA
       </button>
     </div>
 
@@ -232,63 +250,51 @@
 </div>
 
 
-<!-- ══════════════════════════════════════════════════════════════
+<!-- ══════════════════════════════════════════════════════════
      SALES TABLE
-══════════════════════════════════════════════════════════════ -->
-<div class="glass rounded-2xl shadow-card animate-fadeInUp" style="animation-delay:0.10s">
-  <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-brand-800/40">
-    <h2 class="font-bold text-white flex items-center gap-2">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-      </svg>
-      Vendas Lançadas
-    </h2>
-    <span class="text-xs text-slate-500">{{ vendas|length }} registro(s)</span>
+══════════════════════════════════════════════════════════ -->
+<div class="card fade-in" style="animation-delay: 0.08s;">
+  <div class="section-header">
+    <span class="display" style="font-size: 1.1rem; letter-spacing: 0.08em; color: var(--txt);">VENDAS LANÇADAS</span>
+    <span class="sys-label-dim" style="margin-left: auto;">{{ vendas|length }} REGISTRO{% if vendas|length != 1 %}S{% endif %}</span>
   </div>
 
   {% if vendas %}
-  <div class="overflow-x-auto">
-    <table class="w-full text-sm">
+  <div style="overflow-x: auto;">
+    <table>
       <thead>
-        <tr class="border-b border-brand-800/30">
-          <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">#</th>
-          <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Pessoas</th>
-          <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Canal</th>
-          <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Cidade</th>
-          <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Fotógrafo</th>
-          <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Vendedor</th>
-          <th class="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Valor</th>
-          <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Pag.</th>
-          <th class="px-4 py-3"></th>
+        <tr>
+          <th>#</th>
+          <th>PESS.</th>
+          <th>CANAL</th>
+          <th>CIDADE</th>
+          <th>FOTÓGRAFO</th>
+          <th>VENDEDOR</th>
+          <th style="text-align: right;">VALOR</th>
+          <th style="text-align: center;">PAG.</th>
+          <th></th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-brand-800/20">
+      <tbody>
         {% for v in vendas %}
         <tr>
-          <td class="px-4 py-3 text-slate-500 font-mono text-xs">{{ loop.index }}</td>
-          <td class="px-4 py-3 text-center">
-            <span class="inline-flex items-center gap-1 text-slate-300">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
-              </svg>
-              {{ v.num_pessoas }}
-            </span>
+          <td class="money-dim" style="font-size: 0.7rem; padding-right: 0.5rem;">{{ "%02d"|format(loop.index) }}</td>
+          <td style="font-weight: 600; color: var(--txt); font-size: 0.85rem; text-align: center;">{{ v.num_pessoas }}</td>
+          <td style="color: var(--dim); font-size: 0.75rem;">{{ v.canal_venda or '—' }}</td>
+          <td style="color: var(--dim); font-size: 0.72rem;">{{ v.cidade_origem or '—' }}</td>
+          <td style="color: var(--dim); font-size: 0.72rem;">{{ v.fotografo or '—' }}</td>
+          <td style="color: var(--dim); font-size: 0.72rem;">{{ v.vendedor or '—' }}</td>
+          <td style="text-align: right;">
+            <span class="money" style="font-size: 0.85rem;">R$ {{ "%.2f"|format(v.valor_venda) | replace('.', ',') }}</span>
           </td>
-          <td class="px-4 py-3 text-slate-300">{{ v.canal_venda or '—' }}</td>
-          <td class="px-4 py-3 text-slate-300 text-xs">{{ v.cidade_origem or '—' }}</td>
-          <td class="px-4 py-3 text-slate-300 text-xs">{{ v.fotografo or '—' }}</td>
-          <td class="px-4 py-3 text-slate-300 text-xs">{{ v.vendedor or '—' }}</td>
-          <td class="px-4 py-3 text-right font-mono font-semibold money-positive">
-            R$ {{ "%.2f"|format(v.valor_venda) | replace('.', ',') }}
-          </td>
-          <td class="px-4 py-3 text-center">
+          <td style="text-align: center;">
             <span class="badge badge-{{ v.forma_pagamento|lower }}">{{ v.forma_pagamento }}</span>
           </td>
-          <td class="px-4 py-3 text-right">
+          <td style="text-align: right; padding-right: 0.75rem;">
             <form action="/dia/{{ data }}/venda/{{ v.id }}/excluir" method="POST"
-                  onsubmit="return confirm('Excluir esta venda?');">
-              <button type="submit" class="btn-danger rounded-lg px-2.5 py-1 text-xs font-semibold">
-                Excluir
+                  onsubmit="return confirm('CONFIRMAR EXCLUSÃO DA VENDA #{{ loop.index }}?');">
+              <button type="submit" class="btn btn-danger" style="font-size: 0.6rem; padding: 0.25rem 0.6rem;">
+                DEL
               </button>
             </form>
           </td>
@@ -296,72 +302,105 @@
         {% endfor %}
       </tbody>
       <tfoot>
-        <tr class="border-t-2 border-brand-700/40 bg-brand-950/30">
-          <td colspan="6" class="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wide">Total Geral</td>
-          <td class="px-4 py-3 text-right font-mono font-bold text-lg money-positive">
-            R$ {{ "%.2f"|format(total_dia) | replace('.', ',') }}
+        <tr style="background: var(--s2);">
+          <td colspan="6" style="font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--dim);">TOTAL GERAL DO DIA</td>
+          <td style="text-align: right;">
+            <span class="money" style="font-size: 1.1rem; font-family: 'Bebas Neue'; letter-spacing: 0.05em;">R$ {{ "%.2f"|format(total_dia) | replace('.', ',') }}</span>
           </td>
           <td colspan="2"></td>
         </tr>
       </tfoot>
     </table>
   </div>
+
+  <!-- Big WhatsApp button at bottom when there are sales -->
+  <div style="padding: 1rem 1.25rem; background: var(--s2); border-top: 1px solid var(--bd); display: flex; align-items: center; justify-content: space-between;">
+    <div class="sys-label-dim">COMPARTILHAR RELATÓRIO COMPLETO</div>
+    {% if whatsapp_numero %}
+      <a href="/dia/{{ data }}/whatsapp" target="_blank" class="btn btn-wa" style="font-size: 0.72rem; padding: 0.55rem 1.5rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;flex-shrink:0;" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+        </svg>
+        ENVIAR RELATÓRIO VIA WHATSAPP
+      </a>
+    {% else %}
+      <a href="/admin" class="btn btn-ghost" style="font-size: 0.65rem; border-color: var(--muted); color: var(--dim);">
+        ⚠ CONFIGURAR NÚMERO WHATSAPP NO ADMIN
+      </a>
+    {% endif %}
+  </div>
+
   {% else %}
-  <div class="py-16 flex flex-col items-center gap-3 text-slate-600">
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
-    </svg>
-    <p class="text-sm font-medium">Nenhuma venda lançada neste dia.</p>
-    <p class="text-xs">Use o formulário acima para registrar a primeira venda.</p>
+  <!-- Empty state -->
+  <div style="padding: 4rem 1rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; text-align: center;">
+    <div class="display" style="font-size: 6rem; color: var(--muted); line-height: 1; letter-spacing: 0.05em;">NULL</div>
+    <div class="sys-label-dim">NENHUM REGISTRO ENCONTRADO PARA ESTA DATA</div>
+    <div style="font-size: 0.72rem; color: var(--muted); font-family: 'IBM Plex Mono';">
+      Use o formulário acima para lançar a primeira venda.
+    </div>
   </div>
   {% endif %}
+
 </div>
 
 
-<!-- ══════════════════════════════════════════════════════════════
+<!-- ══════════════════════════════════════════════════════════
      JAVASCRIPT
-══════════════════════════════════════════════════════════════ -->
+══════════════════════════════════════════════════════════ -->
 <script>
-  // ── Money mask ──
+  // ── Constants ──
+  const TODAY      = "{{ today }}";
+  const PAGE_DATE  = "{{ data }}";
+  const IS_TODAY   = PAGE_DATE === TODAY;
+
+  // ── Lock / Unlock logic ──────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    if (!IS_TODAY) {
+      document.getElementById('lock-overlay').style.display = 'block';
+      document.getElementById('sale-form-section').style.display = 'none';
+    } else {
+      document.getElementById('lock-overlay').style.display = 'none';
+      document.getElementById('sale-form-section').style.display = 'block';
+    }
+  });
+
+  function unlockForm() {
+    document.getElementById('lock-overlay').style.display = 'none';
+    const formSection = document.getElementById('sale-form-section');
+    formSection.style.display = 'block';
+    // Show retroactive warning banner
+    if (!IS_TODAY) {
+      document.getElementById('retro-warning').style.display = 'block';
+    }
+    // Scroll to form
+    formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ── Money mask ───────────────────────────────────────────────
   function maskMoney(el) {
     let v = el.value.replace(/\D/g, '');
     if (!v) { el.value = ''; return; }
     v = (parseInt(v, 10) / 100).toFixed(2);
-    // format with dot as thousands separator and comma as decimal
     let [intPart, decPart] = v.split('.');
     intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     el.value = 'R$ ' + intPart + ',' + decPart;
   }
 
-  // ── Toggle abertura form ──
+  // ── Toggle abertura form ─────────────────────────────────────
   function toggleAberturaForm() {
-    const form = document.getElementById('abertura-form');
-    form.classList.toggle('hidden');
-    if (!form.classList.contains('hidden')) {
+    const f = document.getElementById('abertura-form');
+    f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    if (f.style.display !== 'none') {
       document.getElementById('input-abertura').focus();
     }
   }
 
-  // ── Prevent double-submit ──
+  // ── Prevent double-submit ────────────────────────────────────
   document.getElementById('form-venda').addEventListener('submit', function(e) {
     const btn = document.getElementById('btn-nova-venda');
     btn.disabled = true;
-    btn.innerHTML = '<svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Salvando…';
+    btn.innerHTML = '<svg class="spin" style="width:14px;height:14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle style="opacity:.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path style="opacity:.75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg> PROCESSANDO…';
   });
-
-  // ── Auto-hide flash after 5s ──
-  setTimeout(() => {
-    document.querySelectorAll('.flash-success,.flash-error').forEach(el => {
-      el.style.transition = 'opacity 0.5s';
-      el.style.opacity = '0';
-      setTimeout(() => el.remove(), 500);
-    });
-  }, 5000);
 </script>
-
-<style>
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .animate-spin { animation: spin 1s linear infinite; }
-</style>
 
 {% endblock %}
