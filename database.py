@@ -65,3 +65,28 @@ def seed_defaults():
                 "INSERT OR IGNORE INTO configuracoes (tipo, valor) VALUES (?, ?)",
                 defaults,
             )
+
+
+# ---------------------------------------------------------------------------
+# WhatsApp configuration helpers
+# ---------------------------------------------------------------------------
+
+def get_whatsapp_numero() -> str | None:
+    """Return the configured WhatsApp phone number or None."""
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT valor FROM configuracoes WHERE tipo = 'whatsapp_numero' LIMIT 1"
+        ).fetchone()
+    return row["valor"] if row else None
+
+
+def set_whatsapp_numero(numero: str):
+    """Overwrite the WhatsApp phone number. Pass empty string to clear."""
+    with get_connection() as conn:
+        conn.execute("DELETE FROM configuracoes WHERE tipo = 'whatsapp_numero'")
+        numero = numero.strip()
+        if numero:
+            conn.execute(
+                "INSERT INTO configuracoes (tipo, valor) VALUES ('whatsapp_numero', ?)",
+                (numero,),
+            )
