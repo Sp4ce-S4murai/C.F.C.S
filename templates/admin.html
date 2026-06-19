@@ -1,143 +1,263 @@
 {% extends "base.html" %}
-{% block title %}Administrativo{% endblock %}
+{% block title %}ADMIN // SISTEMA{% endblock %}
 
 {% block content %}
 
-<div class="mb-6 animate-fadeInUp">
-  <h1 class="text-2xl font-bold text-white">Painel Administrativo</h1>
-  <p class="text-sm text-slate-500 mt-1">Gerencie as listas de auto-preenchimento do sistema.</p>
+<!-- Page header -->
+<div class="fade-in" style="margin-bottom: 1.5rem;">
+  <div class="sys-label" style="margin-bottom: 0.4rem;">PAINEL ADMINISTRATIVO</div>
+  <div class="display" style="font-size: 2.8rem; letter-spacing: 0.07em; line-height: 1; color: var(--txt);">
+    GERENCIAMENTO DO SISTEMA
+  </div>
+  <div class="sys-label-dim" style="margin-top: 0.4rem;">
+    CONFIGURE AS LISTAS DE AUTO-PREENCHIMENTO E PARÂMETROS DO SISTEMA
+  </div>
 </div>
 
 
-<!-- ══════════════════════════════════════════════════════════════
+<!-- ══════════════════════════════════════════════════════════
      TABS
-══════════════════════════════════════════════════════════════ -->
-<div x-data="{ activeTab: 'canal' }">
+══════════════════════════════════════════════════════════ -->
+<!-- Tab bar -->
+<div style="display: flex; gap: 2px; margin-bottom: 2px; border-bottom: 2px solid var(--bd);" class="fade-in">
+  {% for tab_id, tab_label in [
+      ('canal',   '[01] CANAIS DE VENDA'),
+      ('cidade',  '[02] CIDADES DE ORIGEM'),
+      ('equipe',  '[03] EQUIPE'),
+      ('sistema', '[04] SISTEMA / WHATSAPP')
+  ] %}
+    <button id="tab-btn-{{ tab_id }}" onclick="setTab('{{ tab_id }}')"
+            style="background: {% if loop.first %}var(--s2){% else %}transparent{% endif %};
+                   border: 1px solid {% if loop.first %}var(--neon){% else %}var(--bd){% endif %};
+                   border-bottom: 2px solid {% if loop.first %}var(--s1){% else %}transparent{% endif %};
+                   color: {% if loop.first %}var(--neon){% else %}var(--dim){% endif %};
+                   font-family: 'IBM Plex Mono'; font-size: 0.65rem; font-weight: 700;
+                   letter-spacing: 0.12em; text-transform: uppercase;
+                   padding: 0.6rem 1.1rem; cursor: pointer;
+                   transition: all 0.12s; margin-bottom: -2px;">
+      {{ tab_label }}
+    </button>
+  {% endfor %}
+</div>
 
-  <!-- Tab Bar -->
-  <div class="flex gap-2 mb-6 border-b border-brand-800/40 pb-0 animate-fadeInUp">
-    {% for tab, label, icon in [
-        ('canal',  'Canais de Venda',    'M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z'),
-        ('cidade', 'Cidades de Origem',  'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z'),
-        ('equipe', 'Equipe',             'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z')
-    ] %}
-      <button onclick="setTab('{{ tab }}')" id="tab-btn-{{ tab }}"
-              class="tab-btn flex items-center gap-2 px-5 py-3 text-sm font-semibold rounded-t-xl border-b-2 transition-all
-                     {% if loop.first %}text-brand-300 border-brand-500 bg-brand-950/40{% else %}text-slate-500 border-transparent hover:text-slate-300{% endif %}">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="{{ icon }}"/>
-        </svg>
-        {{ label }}
+
+<!-- ══════════════════════════════════════════════════════════
+     TAB PANELS
+══════════════════════════════════════════════════════════ -->
+
+{% for tipo, tab_label, items, accent_color in [
+    ('canal',  'CANAIS DE VENDA / DIVULGAÇÃO',   canais,  'var(--neon)'),
+    ('cidade', 'CIDADES DE ORIGEM',              cidades, 'var(--acid)'),
+    ('equipe', 'EQUIPE — FOTÓGRAFOS & VENDEDORES', equipe, 'var(--warn)')
+] %}
+<div id="tab-{{ tipo }}" class="tab-panel {% if not loop.first %}hidden{% endif %} card fade-in"
+     style="border-top: 3px solid {{ accent_color }}; animation-delay: 0.05s;">
+
+  <!-- Add form -->
+  <div style="padding: 1rem 1.25rem; background: var(--s2); border-bottom: 1px solid var(--bd);
+              display: flex; flex-direction: column gap: 0.5rem;">
+    <div class="section-header" style="padding: 0; border: none; background: transparent; margin-bottom: 0.75rem;">
+      <span class="display" style="font-size: 1.15rem; letter-spacing: 0.07em; color: var(--txt);">{{ tab_label }}</span>
+      <span class="sys-label-dim" style="margin-left: auto;">{{ items|length }} ITEM{% if items|length != 1 %}NS{% endif %} CADASTRADO{% if items|length != 1 %}S{% endif %}</span>
+    </div>
+    <form action="/admin/add" method="POST" style="display: flex; gap: 0.5rem; align-items: flex-end;">
+      <input type="hidden" name="tipo" value="{{ tipo }}" />
+      <div style="flex: 1;">
+        <label class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">NOVO ITEM</label>
+        <input type="text" name="valor" id="add-input-{{ tipo }}"
+               class="input-field" placeholder="Digite e pressione ADICIONAR…"
+               required autocomplete="off" />
+      </div>
+      <button type="submit" class="btn btn-primary" style="height: 37px; padding: 0 1.5rem; font-size: 0.7rem; white-space: nowrap;">
+        + ADICIONAR
       </button>
-    {% endfor %}
+    </form>
   </div>
 
-  <!-- Tab Panels -->
-  {% for tipo, label, items in [
-      ('canal',  'Canais de Venda/Divulgação', canais),
-      ('cidade', 'Cidades de Origem',          cidades),
-      ('equipe', 'Equipe (Fotógrafos e Vendedores)', equipe)
-  ] %}
-    <div id="tab-{{ tipo }}"
-         class="tab-panel {% if not loop.first %}hidden{% endif %} animate-fadeInUp">
+  <!-- Items list -->
+  {% if items %}
+    <div>
+      {% for item in items %}
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 1.25rem;
+                    border-bottom: 1px solid var(--bd); transition: background 0.1s;"
+             onmouseover="this.style.background='rgba(0,255,102,0.025)'"
+             onmouseout="this.style.background='transparent'">
 
-      <div class="glass rounded-2xl shadow-card overflow-hidden">
-
-        <!-- Section header + Add form -->
-        <div class="px-6 pt-5 pb-4 border-b border-brand-800/40 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
-          <div>
-            <h2 class="font-bold text-white text-lg">{{ label }}</h2>
-            <p class="text-xs text-slate-500 mt-0.5">{{ items|length }} item(ns) cadastrado(s)</p>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <span style="width: 5px; height: 5px; border-radius: 50% !important; background: {{ accent_color }}; flex-shrink: 0;"></span>
+            <span style="font-family: 'IBM Plex Mono'; font-size: 0.82rem; color: var(--txt);">{{ item }}</span>
           </div>
 
-          <!-- Add form -->
-          <form action="/admin/add" method="POST" class="flex gap-2 items-center">
+          <form action="/admin/delete" method="POST"
+                onsubmit="return confirm('REMOVER: {{ item }}?');">
             <input type="hidden" name="tipo" value="{{ tipo }}" />
-            <input type="text" name="valor"
-                   class="input-field rounded-xl px-4 py-2 text-sm w-56"
-                   placeholder="Novo item…"
-                   required
-                   id="add-input-{{ tipo }}" />
-            <button type="submit"
-                    class="btn-primary text-white text-sm font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-glow-sm whitespace-nowrap">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-              </svg>
-              Adicionar
+            <input type="hidden" name="valor" value="{{ item }}" />
+            <button type="submit" class="btn btn-danger" style="font-size: 0.6rem;">
+              DEL
             </button>
           </form>
         </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div style="padding: 3.5rem 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; text-align: center;">
+      <div class="display" style="font-size: 4rem; color: var(--muted); letter-spacing: 0.05em;">EMPTY</div>
+      <div class="sys-label-dim">NENHUM ITEM CADASTRADO NESTA LISTA</div>
+      <div style="font-size: 0.7rem; color: var(--muted); font-family: 'IBM Plex Mono';">
+        Use o formulário acima para adicionar o primeiro registro.
+      </div>
+    </div>
+  {% endif %}
 
-        <!-- Items list -->
-        {% if items %}
-          <ul class="divide-y divide-brand-900/50">
-            {% for item in items %}
-              <li class="flex items-center justify-between px-6 py-3 group hover:bg-brand-900/10 transition-colors">
-                <div class="flex items-center gap-3">
-                  <div class="w-2 h-2 rounded-full
-                              {% if tipo == 'canal' %}bg-brand-500{% elif tipo == 'cidade' %}bg-emerald-500{% else %}bg-amber-500{% endif %}">
-                  </div>
-                  <span class="text-sm text-slate-200 font-medium">{{ item }}</span>
-                </div>
+</div>
+{% endfor %}
 
-                <!-- Delete button -->
-                <form action="/admin/delete" method="POST"
-                      onsubmit="return confirm('Remover \'{{ item }}\' da lista?');">
-                  <input type="hidden" name="tipo" value="{{ tipo }}" />
-                  <input type="hidden" name="valor" value="{{ item }}" />
-                  <button type="submit"
-                          class="btn-danger rounded-lg px-3 py-1 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                    </svg>
-                    Remover
-                  </button>
-                </form>
-              </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <div class="py-14 flex flex-col items-center gap-3 text-slate-600">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-            </svg>
-            <p class="text-sm font-medium">Nenhum item cadastrado.</p>
-            <p class="text-xs">Use o campo acima para adicionar o primeiro item.</p>
+
+<!-- ══════════════════════════════════════════════════════════
+     SISTEMA / WHATSAPP TAB
+══════════════════════════════════════════════════════════ -->
+<div id="tab-sistema" class="tab-panel hidden card fade-in"
+     style="border-top: 3px solid var(--wa);">
+
+  <div class="section-header">
+    <span class="display" style="font-size: 1.15rem; letter-spacing: 0.07em; color: var(--txt);">CONFIGURAÇÕES DO SISTEMA</span>
+  </div>
+
+  <!-- WhatsApp number config -->
+  <div style="padding: 1.5rem 1.25rem; border-bottom: 1px solid var(--bd);">
+
+    <div style="display: flex; align-items: flex-start; gap: 2rem; flex-wrap: wrap;">
+
+      <div style="flex: 1; min-width: 260px;">
+        <div class="sys-label-dim" style="margin-bottom: 0.3rem;">INTEGRAÇÃO WHATSAPP</div>
+        <div style="color: var(--txt); font-size: 0.82rem; font-family: 'IBM Plex Mono'; margin-bottom: 1.25rem; line-height: 1.7; color: var(--dim);">
+          Configure o número de destino para o envio do relatório diário via WhatsApp.<br/>
+          Use o formato internacional com DDI: <span style="color: var(--neon);">5554999999999</span>
+        </div>
+
+        <form action="/admin/whatsapp" method="POST">
+          <label class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">NÚMERO (DDI + DDD + NÚMERO)</label>
+          <div style="display: flex; gap: 0.5rem; align-items: stretch;">
+            <div style="display: flex; align-items: center; padding: 0 0.75rem; background: #080808; border: 1px solid var(--bd); border-right: none; color: var(--dim); font-family: 'IBM Plex Mono'; font-size: 0.78rem;">
+              +
+            </div>
+            <input type="tel" name="whatsapp_numero" id="input-wa-numero"
+                   class="input-field"
+                   style="flex: 1; font-size: 0.9rem; letter-spacing: 0.06em; color: var(--wa);"
+                   placeholder="5554999999999"
+                   value="{{ whatsapp_numero }}"
+                   pattern="[0-9]+" title="Apenas números, sem espaços ou traços" />
+            <button type="submit" class="btn btn-primary"
+                    style="padding: 0 1.5rem; font-size: 0.72rem; white-space: nowrap; background: var(--wa);"
+                    onmouseover="this.style.background='#1ebe59'; this.style.transform='translate(-2px,-2px)'; this.style.boxShadow='4px 4px 0 rgba(37,211,102,0.35)'"
+                    onmouseout="this.style.background='var(--wa)'; this.style.transform=''; this.style.boxShadow=''">
+              SALVAR
+            </button>
           </div>
-        {% endif %}
+          {% if whatsapp_numero %}
+            <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+              <span style="width: 6px; height: 6px; border-radius: 50% !important; background: var(--wa); box-shadow: 0 0 5px var(--wa); flex-shrink: 0;"></span>
+              <span style="font-family: 'IBM Plex Mono'; font-size: 0.7rem; color: var(--wa);">NÚMERO ATIVO: +{{ whatsapp_numero }}</span>
+            </div>
+          {% else %}
+            <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+              <span style="width: 6px; height: 6px; border-radius: 50% !important; background: var(--danger); flex-shrink: 0;"></span>
+              <span style="font-family: 'IBM Plex Mono'; font-size: 0.7rem; color: var(--dim);">NENHUM NÚMERO CONFIGURADO</span>
+            </div>
+          {% endif %}
+        </form>
+      </div>
 
+      <!-- Preview box -->
+      <div style="flex: 0 0 280px; background: #080808; border: 1px solid var(--bd); padding: 1rem;">
+        <div class="sys-label-dim" style="margin-bottom: 0.75rem;">PRÉVIA DO RELATÓRIO</div>
+        <div style="font-family: 'IBM Plex Mono'; font-size: 0.68rem; color: var(--dim); line-height: 1.9; white-space: pre; overflow: hidden;">╔══════════════════════╗
+║  RELATÓRIO DE CAIXA  ║
+╚══════════════════════╝
+
+📅 DATA: 19/06/2026
+🏢 Estúdio Fotográfico
+
+━━━━━━━━━━━━━━━━━━━━━
+💰 RESUMO DO CAIXA
+• Abertura:    R$ 1.500,00
+• Total vendas: R$ 4.200,00
+• Fechamento:  R$ 5.700,00
+
+━━━━━━━━━━━━━━━━━━━━━
+💳 FORMAS DE PAGAMENTO
+  💵 Dinheiro: R$ 800,00
+  📱 PIX: R$ 2.400,00
+  💳 Crédito: R$ 600,00
+
+━━━━━━━━━━━━━━━━━━━━━
+<span style="color: var(--wa);">C.F.C.S · by OCTO</span></div>
       </div>
 
     </div>
-  {% endfor %}
+  </div>
+
+  <!-- Test link -->
+  {% if whatsapp_numero %}
+  <div style="padding: 1rem 1.25rem; background: var(--s2); display: flex; align-items: center; justify-content: space-between;">
+    <div>
+      <div class="sys-label-dim" style="margin-bottom: 0.2rem;">TESTE DE ENVIO</div>
+      <div style="font-size: 0.75rem; color: var(--dim); font-family: 'IBM Plex Mono';">
+        Abre o relatório do dia atual no WhatsApp
+      </div>
+    </div>
+    <a href="/dia/{{ '' }}/whatsapp" id="link-teste-wa"
+       target="_blank" class="btn"
+       style="background: var(--wa); color: #050505; padding: 0.5rem 1.25rem; font-family: 'IBM Plex Mono'; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+      <svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+      </svg>
+      TESTAR AGORA
+    </a>
+  </div>
+  {% endif %}
 
 </div>
 
 
-<!-- ══════════════════════════════════════════════════════════════
-     TAB SWITCHING SCRIPT
-══════════════════════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════
+     TAB SCRIPT
+══════════════════════════════════════════════════════════ -->
 <script>
+  const ALL_TABS = ['canal', 'cidade', 'equipe', 'sistema'];
+
   function setTab(tab) {
-    // Hide all panels
-    document.querySelectorAll('.tab-panel').forEach(el => el.classList.add('hidden'));
-    // Deactivate all buttons
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.classList.remove('text-brand-300', 'border-brand-500', 'bg-brand-950/40');
-      btn.classList.add('text-slate-500', 'border-transparent');
+    ALL_TABS.forEach(t => {
+      const panel = document.getElementById('tab-' + t);
+      const btn   = document.getElementById('tab-btn-' + t);
+      if (!panel || !btn) return;
+
+      const isActive = (t === tab);
+      panel.style.display = isActive ? 'block' : 'none';
+      panel.classList.toggle('hidden', !isActive);
+
+      if (isActive) {
+        btn.style.background   = 'var(--s2)';
+        btn.style.borderColor  = 'var(--neon)';
+        btn.style.color        = 'var(--neon)';
+        btn.style.borderBottom = '2px solid var(--s1)';
+      } else {
+        btn.style.background   = 'transparent';
+        btn.style.borderColor  = 'var(--bd)';
+        btn.style.color        = 'var(--dim)';
+        btn.style.borderBottom = '2px solid transparent';
+      }
     });
 
-    // Show selected panel
-    document.getElementById('tab-' + tab).classList.remove('hidden');
-    // Activate button
-    const activeBtn = document.getElementById('tab-btn-' + tab);
-    activeBtn.classList.add('text-brand-300', 'border-brand-500', 'bg-brand-950/40');
-    activeBtn.classList.remove('text-slate-500', 'border-transparent');
-
-    // Focus the add input
+    // Focus add input if exists
     const inp = document.getElementById('add-input-' + tab);
-    if (inp) inp.focus();
+    if (inp) setTimeout(() => inp.focus(), 50);
   }
+
+  // Set today's date for the WA test link
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const waLink = document.getElementById('link-teste-wa');
+  if (waLink) waLink.href = '/dia/' + todayStr + '/whatsapp';
 </script>
 
 {% endblock %}
