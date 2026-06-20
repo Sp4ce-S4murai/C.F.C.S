@@ -63,23 +63,36 @@ def get_or_create_caixa(data_str: str) -> dict:
 
 
 def recalc_fechamento(data_str: str):
-    """Recalculate fechamento = abertura + total vendas do dia and persist."""
+    """Recalculate fechamento = abertura + total vendas (DIN) - retiradas and persist."""
     with get_connection() as conn:
         caixa = conn.execute(
             "SELECT abertura_caixa FROM caixa_diario WHERE data = ?", (data_str,)
         ).fetchone()
         abertura = caixa["abertura_caixa"] if caixa else 0.0
 
-        total = conn.execute(
-            "SELECT COALESCE(SUM(valor_venda),0) as total FROM vendas WHERE data_venda = ?",
+        total_dinheiro = conn.execute(
+            "SELECT COALESCE(SUM(valor_venda),0) as total FROM vendas WHERE data_venda = ? AND forma_pagamento = 'DIN'",
             (data_str,),
         ).fetchone()["total"]
 
-        fechamento = abertura + total
+        total_retiradas = conn.execute(
+            "SELECT COALESCE(SUM(valor),0) as total FROM retiradas_caixa WHERE data = ?",
+            (data_str,),
+        ).fetchone()["total"]
+
+        fechamento = abertura + total_dinheiro - total_retiradas
         conn.execute(
             "UPDATE caixa_diario SET fechamento_caixa = ? WHERE data = ?",
             (fechamento, data_str),
         )
+
+def get_retiradas_do_dia(data_str: str) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM retiradas_caixa WHERE data = ? ORDER BY id",
+            (data_str,),
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def get_subtotais(data_str: str) -> dict:
@@ -106,7 +119,7 @@ def get_vendas_do_dia(data_str: str) -> list[dict]:
     return [dict(r) for r in rows]
 
 
-def build_whatsapp_message(data_str: str, caixa: dict, vendas: list, subtotais: dict) -> str:
+def build_whatsapp_message(data_str: str, caixa: dict, vendas: list, subtotais: dict, retiradas: list) -> str:
     """Build a formatted WhatsApp message with the daily sales report."""
     d = datetime.strptime(data_str, "%Y-%m-%d")
     data_fmt = d.strftime("%d/%m/%Y")
@@ -126,17 +139,26 @@ def build_whatsapp_message(data_str: str, caixa: dict, vendas: list, subtotais: 
         "*╚══════════════════════════╝*",
         "",
         f"📅 *DATA:* {data_fmt}",
-        f"🏢 *Estúdio Fotográfico · OCTO*",
+        f"🏢 *Estudio Rua Coberta*",
         "",
         "━━━━━━━━━━━━━━━━━━━━━━━━━━",
-        "*💰 RESUMO DO CAIXA*",
-        f"  • Abertura:     *{fmt_brl(caixa['abertura_caixa'])}*",
-        f"  • Total vendas: *{fmt_brl(total)}*",
-        f"  • Fechamento:   *{fmt_brl(caixa['fechamento_caixa'])}*",
-        "",
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━",
-        "*💳 FORMAS DE PAGAMENTO*",
+        "*💰 RESUMO DO CAIXA (FÍSICO)*",
+        f"  • Abertura (DIN):    *{fmt_brl(caixa['abertura_caixa'])}*",
+        f"  • Vendas (DIN):      *{fmt_brl(subtotais.get('DIN', 0.0))}*",
     ]
+    
+    if retiradas:
+        total_retiradas = sum(r["valor"] for r in retiradas)
+        lines.append(f"  • Retiradas:         *-{fmt_brl(total_retiradas)}*")
+        
+    lines.append(f"  • Saldo (Fechamento):*{fmt_brl(caixa['fechamento_caixa'])}*")
+    lines.append("")
+    lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    lines.append("*📊 RESULTADO TOTAL DO DIA*")
+    lines.append(f"  • Faturamento Total: *{fmt_brl(total)}*")
+    lines.append("")
+    lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    lines.append("*💳 FORMAS DE PAGAMENTO*")
 
     for forma in ["DIN", "PIX", "CRE", "DEB", "VCH"]:
         val = subtotais.get(forma, 0.0)
@@ -205,6 +227,7 @@ def diario(data):
 
     caixa = get_or_create_caixa(data)
     vendas = get_vendas_do_dia(data)
+    retiradas = get_retiradas_do_dia(data)
     subtotais = get_subtotais(data)
     total_dia = sum(v["valor_venda"] for v in vendas)
     recalc_fechamento(data)
@@ -226,6 +249,7 @@ def diario(data):
         data_fmt=d.strftime("%d/%m/%Y"),
         caixa=caixa,
         vendas=vendas,
+        retiradas=retiradas,
         subtotais=subtotais,
         total_dia=total_dia,
         canais=canais,
@@ -310,6 +334,44 @@ def set_abertura(data):
     return redirect(url_for("diario", data=data))
 
 
+@app.route("/dia/<data>/retirada/nova", methods=["POST"])
+def nova_retirada(data):
+    try:
+        datetime.strptime(data, "%Y-%m-%d")
+    except ValueError:
+        flash("Data inválida.", "error")
+        return redirect(url_for("diario", data=date.today().isoformat()))
+
+    motivo = request.form.get("motivo", "").strip()
+    valor_raw = request.form.get("valor", "0").strip()
+    valor = parse_money(valor_raw)
+
+    if valor <= 0:
+        flash("Valor da retirada deve ser maior que zero.", "error")
+        return redirect(url_for("diario", data=data))
+
+    get_or_create_caixa(data)
+
+    with get_connection() as conn:
+        conn.execute(
+            """INSERT INTO retiradas_caixa (data, valor, motivo) VALUES (?, ?, ?)""",
+            (data, valor, motivo),
+        )
+
+    recalc_fechamento(data)
+    flash("Retirada registrada com sucesso!", "success")
+    return redirect(url_for("diario", data=data))
+
+
+@app.route("/dia/<data>/retirada/<int:retirada_id>/excluir", methods=["POST"])
+def excluir_retirada(data, retirada_id):
+    with get_connection() as conn:
+        conn.execute("DELETE FROM retiradas_caixa WHERE id = ? AND data = ?", (retirada_id, data))
+    recalc_fechamento(data)
+    flash("Retirada excluída.", "success")
+    return redirect(url_for("diario", data=data))
+
+
 @app.route("/dia/<data>/whatsapp")
 def whatsapp_enviar(data):
     """Generate WhatsApp message with daily report and redirect to wa.me."""
@@ -326,9 +388,10 @@ def whatsapp_enviar(data):
 
     caixa = get_or_create_caixa(data)
     vendas = get_vendas_do_dia(data)
+    retiradas = get_retiradas_do_dia(data)
     subtotais = get_subtotais(data)
 
-    message = build_whatsapp_message(data, caixa, vendas, subtotais)
+    message = build_whatsapp_message(data, caixa, vendas, subtotais, retiradas)
     encoded = quote(message)
     numero_clean = "".join(filter(str.isdigit, numero))
     wa_url = f"https://wa.me/{numero_clean}?text={encoded}"
@@ -514,4 +577,15 @@ if __name__ == "__main__":
     print("  SYSTEM ONLINE  >>  http://127.0.0.1:5000")
     print("  CTRL+C TO TERMINATE")
     print("=" * 60 + "\n")
+    
+    import threading
+    import webbrowser
+    import time
+    
+    def open_browser():
+        time.sleep(1.5)
+        webbrowser.open("http://127.0.0.1:5000")
+        
+    threading.Thread(target=open_browser, daemon=True).start()
+    
     app.run(debug=False, host="127.0.0.1", port=5000)

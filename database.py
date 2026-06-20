@@ -27,6 +27,13 @@ def init_db():
                 forma_pagamento TEXT    NOT NULL DEFAULT 'DIN'
             );
 
+            CREATE TABLE IF NOT EXISTS retiradas_caixa (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                data            DATE    NOT NULL,
+                valor           REAL    NOT NULL DEFAULT 0.0,
+                motivo          TEXT    NOT NULL DEFAULT ''
+            );
+
             CREATE TABLE IF NOT EXISTS caixa_diario (
                 data            DATE    PRIMARY KEY,
                 abertura_caixa  REAL    NOT NULL DEFAULT 0.0,

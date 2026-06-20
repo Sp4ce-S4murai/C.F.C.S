@@ -158,11 +158,11 @@
   </div>
 
   <div class="card" style="padding: 1.25rem; border-left: 3px solid var(--warn); text-align: center;">
-    <div class="sys-label-dim" style="letter-spacing: 0.2em; justify-content: center; margin-bottom: 0.5rem;">DIAS COM MOVIMENTO</div>
+    <div class="sys-label-dim" style="letter-spacing: 0.2em; justify-content: center; margin-bottom: 0.5rem;">TICKET MÉDIO</div>
     <div class="display" style="font-size: 2.5rem; letter-spacing: 0.04em; color: var(--warn);">
-      {{ dias_ativos.val }}
+      R$ {% if count_vendas.val > 0 %}{{ "%.2f"|format(total_mes.val / count_vendas.val) | replace('.', ',') }}{% else %}0,00{% endif %}
     </div>
-    <div class="sys-label-dim" style="margin-top: 0.25rem;">DIA{% if dias_ativos.val != 1 %}S{% endif %} ATIVO{% if dias_ativos.val != 1 %}S{% endif %}</div>
+    <div class="sys-label-dim" style="margin-top: 0.25rem;">POR ATENDIMENTO</div>
   </div>
 
 </div>

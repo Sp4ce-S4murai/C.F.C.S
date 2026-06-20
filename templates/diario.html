@@ -77,11 +77,11 @@
 
   <!-- FECHAMENTO -->
   <div class="card bracketed" style="padding: 1.25rem 1.25rem 1rem; border-left: 3px solid var(--acid); background: var(--s1);">
-    <div class="sys-label-dim" style="margin-bottom: 0.6rem; color: var(--acid); opacity: 0.8;">// FECHAMENTO //</div>
+    <div class="sys-label-dim" style="margin-bottom: 0.6rem; color: var(--acid); opacity: 0.8;">// FECHAMENTO (FÍSICO) //</div>
     <div class="metric-value money-acid" style="font-size: 2rem;">
       R$ {{ "%.2f"|format(caixa.fechamento_caixa) | replace('.', ',') }}
     </div>
-    <div class="sys-label-dim" style="margin-top: 0.6rem;">ABERTURA + VENDAS</div>
+    <div class="sys-label-dim" style="margin-top: 0.6rem;">ABERTURA + VENDAS (DIN) - RETIRADAS</div>
   </div>
 
   <!-- SUBTOTAIS -->
@@ -342,6 +342,66 @@
   {% endif %}
 
 </div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     WITHDRAWALS SECTION
+══════════════════════════════════════════════════════════ -->
+<div class="card fade-in" style="animation-delay: 0.12s; margin-bottom: 1.5rem; border-left: 3px solid var(--warn);">
+  <div class="section-header">
+    <span class="display" style="font-size: 1.1rem; letter-spacing: 0.08em; color: var(--warn);">RETIRADAS DE CAIXA</span>
+    <span class="sys-label-dim" style="margin-left: auto;">{{ retiradas|length }} REGISTRO{% if retiradas|length != 1 %}S{% endif %}</span>
+  </div>
+
+  <form action="/dia/{{ data }}/retirada/nova" method="POST" style="padding: 1rem 1.25rem; display: flex; gap: 1rem; align-items: flex-end; background: var(--s1); border-bottom: 1px solid var(--bd);">
+    <div style="flex: 1;">
+      <label for="motivo" class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">MOTIVO / DESCRIÇÃO</label>
+      <input type="text" id="motivo" name="motivo" required class="input-field" placeholder="Ex: Pagamento fornecedor, sangria..." autocomplete="off" />
+    </div>
+    <div style="width: 150px;">
+      <label for="valor_retirada" class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">VALOR</label>
+      <input type="text" id="valor_retirada" name="valor" required class="input-field money-warn" placeholder="R$ 0,00" oninput="maskMoney(this)" />
+    </div>
+    <button type="submit" class="btn btn-ghost-warn" style="font-size: 0.78rem; padding: 0.7rem 1.5rem;">
+      + REGISTRAR
+    </button>
+  </form>
+
+  {% if retiradas %}
+  <div style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 50px;">#</th>
+          <th>MOTIVO</th>
+          <th style="text-align: right; width: 150px;">VALOR</th>
+          <th style="width: 80px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in retiradas %}
+        <tr>
+          <td class="money-dim" style="font-size: 0.7rem;">{{ "%02d"|format(loop.index) }}</td>
+          <td style="color: var(--txt); font-size: 0.85rem;">{{ r.motivo }}</td>
+          <td style="text-align: right;">
+            <span class="money-warn" style="font-size: 0.85rem;">R$ {{ "%.2f"|format(r.valor) | replace('.', ',') }}</span>
+          </td>
+          <td style="text-align: right; padding-right: 0.75rem;">
+            <form action="/dia/{{ data }}/retirada/{{ r.id }}/excluir" method="POST"
+                  onsubmit="return confirm('CONFIRMAR EXCLUSÃO DA RETIRADA #{{ loop.index }}?');">
+              <button type="submit" class="btn btn-danger" style="font-size: 0.6rem; padding: 0.25rem 0.6rem;">
+                DEL
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+
 
 
 <!-- ══════════════════════════════════════════════════════════
