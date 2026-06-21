@@ -195,7 +195,11 @@
         <label for="cidade_origem" class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">CIDADE DE ORIGEM</label>
         <input type="text" id="cidade_origem" name="cidade_origem"
                list="list-cidades" class="input-field"
-               placeholder="Gramado-RS…" autocomplete="off" />
+               placeholder="Vitória-ES…" autocomplete="off"
+               oninput="validateCidade(this)" />
+        <div id="cidade-error" style="display:none; font-size:0.6rem; color:var(--danger); font-family:'IBM Plex Mono'; margin-top:0.2rem; letter-spacing:0.05em;">
+          ⚠ Use o formato: Municipio-ES (ex: Vitória-ES)
+        </div>
       </div>
     </div>
 
@@ -216,25 +220,29 @@
                placeholder="Nome…" autocomplete="off" />
       </div>
 
+      <!-- VALOR TOTAL (read-only display, calculated by JS) -->
       <div>
-        <label for="valor_venda" class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">VALOR DA VENDA</label>
-        <input type="text" id="valor_venda" name="valor_venda"
-               required class="input-field money"
-               placeholder="R$ 0,00"
-               oninput="maskMoney(this)" />
+        <label class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">VALOR TOTAL DA VENDA</label>
+        <div id="valor-total-display" class="input-field money"
+             style="display:flex; align-items:center; justify-content:space-between; cursor:default; user-select:none; background: rgba(0,255,102,0.04);">
+          <span id="valor-total-txt" style="color:var(--neon); font-family:'Bebas Neue'; font-size:1.1rem; letter-spacing:0.05em;">R$ 0,00</span>
+          <span class="sys-label-dim" style="font-size:0.55rem;">AUTO</span>
+        </div>
       </div>
 
-      <div>
-        <label class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">FORMA DE PAGAMENTO</label>
-        <div style="display: flex; flex-wrap: wrap; gap: 0.3rem; padding-top: 0.1rem;">
-          {% for forma in formas %}
-            <span class="radio-btn">
-              <input type="radio" id="fp-{{ forma }}" name="forma_pagamento" value="{{ forma }}"
-                     {% if loop.first %}checked{% endif %} />
-              <label for="fp-{{ forma }}">{{ forma }}</label>
-            </span>
-          {% endfor %}
+      <!-- FORMAS DE PAGAMENTO MISTAS -->
+      <div style="grid-column: 1 / -1;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+          <label class="sys-label-dim">FORMAS DE PAGAMENTO</label>
+          <button type="button" id="btn-add-forma" onclick="addPaymentRow()"
+                  style="background:transparent; border:1px solid var(--neon); color:var(--neon); font-family:'IBM Plex Mono'; font-size:0.6rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; padding:0.25rem 0.7rem; cursor:pointer; transition:all 0.12s;"
+                  onmouseover="this.style.background='rgba(0,255,102,0.1)'"
+                  onmouseout="this.style.background='transparent'">
+            + ADICIONAR FORMA
+          </button>
         </div>
+        <div id="payment-rows" style="display:flex; flex-direction:column; gap:0.4rem;"></div>
+        <div id="payment-error" style="display:none; margin-top:0.35rem; font-size:0.62rem; color:var(--danger); font-family:'IBM Plex Mono'; letter-spacing:0.05em;"></div>
       </div>
 
     </div>
@@ -288,7 +296,15 @@
             <span class="money" style="font-size: 0.85rem;">R$ {{ "%.2f"|format(v.valor_venda) | replace('.', ',') }}</span>
           </td>
           <td style="text-align: center;">
-            <span class="badge badge-{{ v.forma_pagamento|lower }}">{{ v.forma_pagamento }}</span>
+            {% if v.forma_pagamento == 'MIX' and v.pagamentos %}
+              <div style="display:flex; flex-wrap:wrap; gap:0.2rem; justify-content:center;">
+                {% for p in v.pagamentos %}
+                  <span class="badge badge-{{ p.forma_pagamento|lower }}" style="font-size:0.58rem; padding:0.1rem 0.35rem;">{{ p.forma_pagamento }}</span>
+                {% endfor %}
+              </div>
+            {% else %}
+              <span class="badge badge-{{ v.forma_pagamento|lower }}">{{ v.forma_pagamento }}</span>
+            {% endif %}
           </td>
           <td style="text-align: right; padding-right: 0.75rem;">
             <form action="/dia/{{ data }}/venda/{{ v.id }}/excluir" method="POST"
@@ -412,6 +428,8 @@
   const TODAY      = "{{ today }}";
   const PAGE_DATE  = "{{ data }}";
   const IS_TODAY   = PAGE_DATE === TODAY;
+  const FORMAS     = {{ formas | tojson }};
+  const CIDADE_RE  = /^[A-ZÀ-ÖØ-Ý][A-Za-zÀ-öØ-ÿ\s]+-[A-Z]{2}$/;
 
   // ── Lock / Unlock logic ──────────────────────────────────────
   window.addEventListener('DOMContentLoaded', () => {
@@ -422,17 +440,17 @@
       document.getElementById('lock-overlay').style.display = 'none';
       document.getElementById('sale-form-section').style.display = 'block';
     }
+    // Init first payment row
+    addPaymentRow();
   });
 
   function unlockForm() {
     document.getElementById('lock-overlay').style.display = 'none';
     const formSection = document.getElementById('sale-form-section');
     formSection.style.display = 'block';
-    // Show retroactive warning banner
     if (!IS_TODAY) {
       document.getElementById('retro-warning').style.display = 'block';
     }
-    // Scroll to form
     formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -444,6 +462,116 @@
     let [intPart, decPart] = v.split('.');
     intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     el.value = 'R$ ' + intPart + ',' + decPart;
+    recalcTotal();
+  }
+
+  // ── City validation ──────────────────────────────────────────
+  function validateCidade(el) {
+    const v = el.value.trim();
+    const errEl = document.getElementById('cidade-error');
+    if (v && !CIDADE_RE.test(v)) {
+      el.style.borderColor = 'var(--danger)';
+      errEl.style.display = 'block';
+    } else {
+      el.style.borderColor = '';
+      errEl.style.display = 'none';
+    }
+  }
+
+  // ── Auto-save on blur ────────────────────────────────────────
+  async function autosave(tipo, valor) {
+    if (!valor) return;
+    try {
+      await fetch('/api/config/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo, valor })
+      });
+    } catch(e) { /* silent */ }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const fotEl  = document.getElementById('fotografo');
+    const venEl  = document.getElementById('vendedor');
+    const cidEl  = document.getElementById('cidade_origem');
+
+    if (fotEl) fotEl.addEventListener('blur', () => autosave('equipe', fotEl.value.trim()));
+    if (venEl) venEl.addEventListener('blur', () => autosave('equipe', venEl.value.trim()));
+    if (cidEl) cidEl.addEventListener('blur', () => {
+      const v = cidEl.value.trim();
+      if (v && CIDADE_RE.test(v)) autosave('cidade', v);
+    });
+  });
+
+  // ── Dynamic payment rows ─────────────────────────────────────
+  let payRowCount = 0;
+
+  function addPaymentRow(defaultForma) {
+    payRowCount++;
+    const idx = payRowCount;
+    const container = document.getElementById('payment-rows');
+
+    const row = document.createElement('div');
+    row.id = 'pay-row-' + idx;
+    row.style.cssText = 'display:flex; gap:0.5rem; align-items:center;';
+
+    // Select forma
+    const sel = document.createElement('select');
+    sel.name = 'forma_pagamento_' + idx;
+    sel.style.cssText = 'font-family:"IBM Plex Mono"; font-size:0.75rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; background:var(--s2); border:1px solid var(--bd); color:var(--txt); padding:0.45rem 0.5rem; cursor:pointer; min-width:72px;';
+    FORMAS.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f;
+      opt.textContent = f;
+      if (f === (defaultForma || 'DIN')) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', recalcTotal);
+
+    // Value input
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.name = 'valor_pagamento_' + idx;
+    inp.placeholder = 'R$ 0,00';
+    inp.className = 'input-field money';
+    inp.style.flex = '1';
+    inp.addEventListener('input', () => maskMoney(inp));
+
+    // Remove button (hidden for first row)
+    const rmBtn = document.createElement('button');
+    rmBtn.type = 'button';
+    rmBtn.innerHTML = '×';
+    rmBtn.title = 'Remover forma';
+    rmBtn.style.cssText = 'background:transparent; border:1px solid var(--danger); color:var(--danger); font-family:"IBM Plex Mono"; font-size:0.9rem; font-weight:700; width:30px; height:30px; cursor:pointer; flex-shrink:0; line-height:1; transition:all 0.1s;';
+    rmBtn.onmouseover = () => { rmBtn.style.background='rgba(255,59,48,0.12)'; };
+    rmBtn.onmouseout  = () => { rmBtn.style.background='transparent'; };
+    rmBtn.onclick = () => { row.remove(); recalcTotal(); };
+    if (idx === 1) rmBtn.style.visibility = 'hidden';
+
+    row.appendChild(sel);
+    row.appendChild(inp);
+    row.appendChild(rmBtn);
+    container.appendChild(row);
+
+    inp.focus();
+    recalcTotal();
+    return inp;
+  }
+
+  function recalcTotal() {
+    let total = 0;
+    let idx = 1;
+    while (true) {
+      const inp = document.querySelector(`[name="valor_pagamento_${idx}"]`);
+      if (!inp) break;
+      const raw = inp.value.replace(/[R$\s.]/g,'').replace(',','.');
+      total += parseFloat(raw) || 0;
+      idx++;
+    }
+    const fmt = (total / 1).toFixed(2);
+    let [i, d] = fmt.split('.');
+    i = i.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    document.getElementById('valor-total-txt').textContent = 'R$ ' + i + ',' + d;
   }
 
   // ── Toggle abertura form ─────────────────────────────────────
@@ -455,8 +583,36 @@
     }
   }
 
-  // ── Prevent double-submit ────────────────────────────────────
+  // ── Prevent double-submit + validate before send ─────────────
   document.getElementById('form-venda').addEventListener('submit', function(e) {
+    // Validate city
+    const cidEl = document.getElementById('cidade_origem');
+    if (cidEl && cidEl.value.trim() && !CIDADE_RE.test(cidEl.value.trim())) {
+      e.preventDefault();
+      cidEl.focus();
+      document.getElementById('cidade-error').style.display = 'block';
+      return;
+    }
+
+    // Validate at least one payment row with a value
+    let total = 0;
+    let idx = 1;
+    while (true) {
+      const inp = document.querySelector(`[name="valor_pagamento_${idx}"]`);
+      if (!inp) break;
+      const raw = inp.value.replace(/[R$\s.]/g,'').replace(',','.');
+      total += parseFloat(raw) || 0;
+      idx++;
+    }
+    if (total <= 0) {
+      e.preventDefault();
+      const errEl = document.getElementById('payment-error');
+      errEl.textContent = '⚠ Informe ao menos um valor de pagamento maior que zero.';
+      errEl.style.display = 'block';
+      return;
+    }
+    document.getElementById('payment-error').style.display = 'none';
+
     const btn = document.getElementById('btn-nova-venda');
     btn.disabled = true;
     btn.innerHTML = '<svg class="spin" style="width:14px;height:14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle style="opacity:.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path style="opacity:.75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg> PROCESSANDO…';

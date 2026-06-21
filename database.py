@@ -27,6 +27,13 @@ def init_db():
                 forma_pagamento TEXT    NOT NULL DEFAULT 'DIN'
             );
 
+            CREATE TABLE IF NOT EXISTS venda_pagamentos (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                venda_id        INTEGER NOT NULL REFERENCES vendas(id) ON DELETE CASCADE,
+                forma_pagamento TEXT    NOT NULL DEFAULT 'DIN',
+                valor           REAL    NOT NULL DEFAULT 0.0
+            );
+
             CREATE TABLE IF NOT EXISTS retiradas_caixa (
                 id              INTEGER PRIMARY KEY AUTOINCREMENT,
                 data            DATE    NOT NULL,
@@ -72,6 +79,20 @@ def seed_defaults():
                 "INSERT OR IGNORE INTO configuracoes (tipo, valor) VALUES (?, ?)",
                 defaults,
             )
+
+
+# ---------------------------------------------------------------------------
+# Payment helpers
+# ---------------------------------------------------------------------------
+
+def get_pagamentos_da_venda(venda_id: int) -> list[dict]:
+    """Return list of payment slices for a given venda_id."""
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT forma_pagamento, valor FROM venda_pagamentos WHERE venda_id = ? ORDER BY id",
+            (venda_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 # ---------------------------------------------------------------------------

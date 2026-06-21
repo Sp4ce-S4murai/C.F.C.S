@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=C.F.C.S
+Comment=Cash Flow Control System – by OCTO
+Exec=bash /home/recordarfotos/Documentos/Projetos/C.F.C.S/Iniciar_Linux.sh
+Path=/home/recordarfotos/Documentos/Projetos/C.F.C.S
+Terminal=false
+Categories=Office;Finance;
+StartupNotify=true

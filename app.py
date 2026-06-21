@@ -3,7 +3,7 @@ from datetime import date, timedelta, datetime
 import calendar
 from urllib.parse import quote
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
-from database import get_connection, init_db, seed_defaults, get_whatsapp_numero, set_whatsapp_numero
+from database import get_connection, init_db, seed_defaults, get_whatsapp_numero, set_whatsapp_numero, get_pagamentos_da_venda
 
 app = Flask(__name__)
 app.secret_key = "cfcs-octo-secret-2024"
@@ -63,15 +63,19 @@ def get_or_create_caixa(data_str: str) -> dict:
 
 
 def recalc_fechamento(data_str: str):
-    """Recalculate fechamento = abertura + total vendas (DIN) - retiradas and persist."""
+    """Recalculate fechamento = abertura + total vendas DIN (via venda_pagamentos) - retiradas."""
     with get_connection() as conn:
         caixa = conn.execute(
             "SELECT abertura_caixa FROM caixa_diario WHERE data = ?", (data_str,)
         ).fetchone()
         abertura = caixa["abertura_caixa"] if caixa else 0.0
 
+        # Sum DIN across all payment slices for the day
         total_dinheiro = conn.execute(
-            "SELECT COALESCE(SUM(valor_venda),0) as total FROM vendas WHERE data_venda = ? AND forma_pagamento = 'DIN'",
+            """SELECT COALESCE(SUM(vp.valor), 0) as total
+               FROM venda_pagamentos vp
+               JOIN vendas v ON v.id = vp.venda_id
+               WHERE v.data_venda = ? AND vp.forma_pagamento = 'DIN'""",
             (data_str,),
         ).fetchone()["total"]
 
@@ -96,17 +100,22 @@ def get_retiradas_do_dia(data_str: str) -> list[dict]:
 
 
 def get_subtotais(data_str: str) -> dict:
+    """Sum sales per payment form using venda_pagamentos for accuracy (handles MIX)."""
     formas = ["DIN", "CRE", "DEB", "PIX", "VCH"]
     result = {f: 0.0 for f in formas}
     with get_connection() as conn:
+        # Sales with a single form: use venda_pagamentos (always populated)
         rows = conn.execute(
-            """SELECT forma_pagamento, COALESCE(SUM(valor_venda),0) as subtotal
-               FROM vendas WHERE data_venda = ? GROUP BY forma_pagamento""",
+            """SELECT vp.forma_pagamento, COALESCE(SUM(vp.valor), 0) as subtotal
+               FROM venda_pagamentos vp
+               JOIN vendas v ON v.id = vp.venda_id
+               WHERE v.data_venda = ?
+               GROUP BY vp.forma_pagamento""",
             (data_str,),
         ).fetchall()
     for r in rows:
         if r["forma_pagamento"] in result:
-            result[r["forma_pagamento"]] = r["subtotal"]
+            result[r["forma_pagamento"]] = result[r["forma_pagamento"]] + r["subtotal"]
     return result
 
 
@@ -116,7 +125,11 @@ def get_vendas_do_dia(data_str: str) -> list[dict]:
             "SELECT * FROM vendas WHERE data_venda = ? ORDER BY id",
             (data_str,),
         ).fetchall()
-    return [dict(r) for r in rows]
+    vendas = [dict(r) for r in rows]
+    # Enrich each sale with its payment slices
+    for v in vendas:
+        v["pagamentos"] = get_pagamentos_da_venda(v["id"])
+    return vendas
 
 
 def build_whatsapp_message(data_str: str, caixa: dict, vendas: list, subtotais: dict, retiradas: list) -> str:
@@ -177,9 +190,18 @@ def build_whatsapp_message(data_str: str, caixa: dict, vendas: list, subtotais: 
         ]
         for i, v in enumerate(vendas, 1):
             lines.append("")
+            pagamentos = v.get("pagamentos", [])
+            if len(pagamentos) > 1:
+                pag_str = " + ".join(
+                    f"{p['forma_pagamento']} {fmt_brl(p['valor'])}" for p in pagamentos
+                )
+            elif pagamentos:
+                pag_str = f"{pagamentos[0]['forma_pagamento']}"
+            else:
+                pag_str = v['forma_pagamento']
             lines.append(
                 f"*#{i}* — {fmt_brl(v['valor_venda'])} | "
-                f"{v['forma_pagamento']} | {v['num_pessoas']} pess."
+                f"{pag_str} | {v['num_pessoas']} pess."
             )
             parts = []
             if v.get("cidade_origem"):
@@ -263,6 +285,10 @@ def diario(data):
     )
 
 
+CIDADE_RE = re.compile(r'^[A-ZÀ-ÖØ-Ý][A-Za-zÀ-öØ-ÿ\s]+-[A-Z]{2}$')
+FORMAS_VALIDAS = {"DIN", "CRE", "DEB", "PIX", "VCH"}
+
+
 @app.route("/dia/<data>/venda/nova", methods=["POST"])
 def nova_venda(data):
     try:
@@ -276,32 +302,87 @@ def nova_venda(data):
     cidade_origem = request.form.get("cidade_origem", "").strip()
     fotografo = request.form.get("fotografo", "").strip()
     vendedor = request.form.get("vendedor", "").strip()
-    valor_raw = request.form.get("valor_venda", "0").strip()
-    valor_venda = parse_money(valor_raw)
-    forma_pagamento = request.form.get("forma_pagamento", "DIN").strip()
 
-    if valor_venda <= 0:
+    # ── Collect multiple payment slices ────────────────────────
+    # Form sends: forma_pagamento_1, valor_pagamento_1, forma_pagamento_2, …
+    pagamentos = []
+    i = 1
+    while True:
+        forma_key = f"forma_pagamento_{i}"
+        valor_key = f"valor_pagamento_{i}"
+        if forma_key not in request.form:
+            break
+        forma = request.form.get(forma_key, "DIN").strip().upper()
+        valor = parse_money(request.form.get(valor_key, "0").strip())
+        if forma in FORMAS_VALIDAS and valor > 0:
+            pagamentos.append({"forma": forma, "valor": valor})
+        i += 1
+
+    # Fallback: single legacy field (in case JS is disabled)
+    if not pagamentos:
+        forma_pagamento = request.form.get("forma_pagamento", "DIN").strip().upper()
+        valor_raw = request.form.get("valor_venda", "0").strip()
+        valor_venda = parse_money(valor_raw)
+        if valor_venda > 0:
+            pagamentos.append({"forma": forma_pagamento, "valor": valor_venda})
+
+    if not pagamentos:
         flash("Valor da venda deve ser maior que zero.", "error")
         return redirect(url_for("diario", data=data))
+
+    # Validate city format if provided
+    if cidade_origem and not CIDADE_RE.match(cidade_origem):
+        flash("Cidade inválida. Use o formato: Municipio-ES (ex: Vitória-ES).", "error")
+        return redirect(url_for("diario", data=data))
+
+    valor_venda_total = sum(p["valor"] for p in pagamentos)
+    forma_pagamento_principal = pagamentos[0]["forma"] if len(pagamentos) == 1 else "MIX"
 
     get_or_create_caixa(data)
 
     with get_connection() as conn:
-        conn.execute(
+        cursor = conn.execute(
             """INSERT INTO vendas
                (data_venda, num_pessoas, canal_venda, cidade_origem, fotografo, vendedor, valor_venda, forma_pagamento)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (data, num_pessoas, canal_venda, cidade_origem, fotografo, vendedor, valor_venda, forma_pagamento),
+            (data, num_pessoas, canal_venda, cidade_origem, fotografo, vendedor,
+             valor_venda_total, forma_pagamento_principal),
         )
+        venda_id = cursor.lastrowid
+        conn.executemany(
+            "INSERT INTO venda_pagamentos (venda_id, forma_pagamento, valor) VALUES (?, ?, ?)",
+            [(venda_id, p["forma"], p["valor"]) for p in pagamentos],
+        )
+
+    # ── Auto-save new values to configuracoes ──────────────────
+    _autosave_config("equipe", fotografo)
+    _autosave_config("equipe", vendedor)
+    if cidade_origem:
+        _autosave_config("cidade", cidade_origem)
 
     recalc_fechamento(data)
     flash("Venda registrada com sucesso!", "success")
     return redirect(url_for("diario", data=data))
 
 
+def _autosave_config(tipo: str, valor: str):
+    """Silently save a new config value if it doesn't already exist."""
+    if not valor:
+        return
+    with get_connection() as conn:
+        try:
+            conn.execute(
+                "INSERT OR IGNORE INTO configuracoes (tipo, valor) VALUES (?, ?)",
+                (tipo, valor),
+            )
+        except Exception:
+            pass
+
+
 @app.route("/dia/<data>/venda/<int:venda_id>/excluir", methods=["POST"])
 def excluir_venda(data, venda_id):
     with get_connection() as conn:
+        # venda_pagamentos will cascade-delete via FK
         conn.execute("DELETE FROM vendas WHERE id = ? AND data_venda = ?", (venda_id, data))
     recalc_fechamento(data)
     flash("Venda excluída.", "success")
@@ -561,6 +642,30 @@ def api_config(tipo):
     if tipo not in allowed:
         return jsonify([]), 400
     return jsonify(get_config(tipo))
+
+
+@app.route("/api/config/add", methods=["POST"])
+def api_config_add():
+    """Auto-save a new config value from the frontend (blur events)."""
+    data = request.get_json(silent=True) or {}
+    tipo = data.get("tipo", "").strip()
+    valor = data.get("valor", "").strip()
+
+    allowed = ("canal", "cidade", "equipe")
+    if tipo not in allowed:
+        return jsonify({"ok": False, "error": "Tipo inválido"}), 400
+    if not valor:
+        return jsonify({"ok": False, "error": "Valor vazio"}), 400
+
+    # City format validation
+    if tipo == "cidade" and not CIDADE_RE.match(valor):
+        return jsonify({
+            "ok": False,
+            "error": "Formato inválido. Use: Municipio-ES (ex: Vitória-ES)"
+        }), 422
+
+    _autosave_config(tipo, valor)
+    return jsonify({"ok": True})
 
 
 # ---------------------------------------------------------------------------
