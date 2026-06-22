@@ -1,5 +1,7 @@
 import sqlite3
 import os
+import shutil
+from datetime import datetime
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "database.db")
 
@@ -18,6 +20,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS vendas (
                 id              INTEGER PRIMARY KEY AUTOINCREMENT,
                 data_venda      DATE    NOT NULL,
+                hora_venda      TEXT    NOT NULL DEFAULT '',
                 num_pessoas     INTEGER NOT NULL DEFAULT 1,
                 canal_venda     TEXT    NOT NULL DEFAULT '',
                 cidade_origem   TEXT    NOT NULL DEFAULT '',
@@ -54,6 +57,34 @@ def init_db():
                 UNIQUE(tipo, valor)
             );
         """)
+        # Migration: add hora_venda column to existing databases
+        try:
+            conn.execute("ALTER TABLE vendas ADD COLUMN hora_venda TEXT NOT NULL DEFAULT ''")
+        except Exception:
+            pass  # Column already exists — safe to ignore
+
+
+def backup_db() -> str:
+    """Create a timestamped backup of the database. Keeps the last 30 backups.
+    Returns the path of the backup file created (empty string if DB not found)."""
+    if not os.path.exists(DB_PATH):
+        return ""
+    backup_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backups")
+    os.makedirs(backup_dir, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_path = os.path.join(backup_dir, f"database_{timestamp}.db")
+    shutil.copy2(DB_PATH, backup_path)
+    # Prune: keep only the 30 most recent backups
+    backups = sorted(
+        f for f in os.listdir(backup_dir)
+        if f.startswith("database_") and f.endswith(".db")
+    )
+    for old in backups[:-30]:
+        try:
+            os.remove(os.path.join(backup_dir, old))
+        except OSError:
+            pass
+    return backup_path
 
 
 def seed_defaults():
@@ -93,6 +124,17 @@ def get_pagamentos_da_venda(venda_id: int) -> list[dict]:
             (venda_id,),
         ).fetchall()
     return [dict(r) for r in rows]
+
+
+def get_venda_by_id(venda_id: int) -> dict | None:
+    """Return a single venda row (with payment slices) as dict, or None."""
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM vendas WHERE id = ?", (venda_id,)).fetchone()
+    if not row:
+        return None
+    v = dict(row)
+    v["pagamentos"] = get_pagamentos_da_venda(venda_id)
+    return v
 
 
 # ---------------------------------------------------------------------------

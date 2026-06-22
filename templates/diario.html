@@ -174,7 +174,7 @@
     <datalist id="list-equipe">{% for e in equipe %}<option value="{{ e }}">{% endfor %}</datalist>
 
     <!-- Row 1 -->
-    <div style="display: grid; grid-template-columns: 100px 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+    <div style="display: grid; grid-template-columns: 90px 100px 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
 
       <div>
         <label for="num_pessoas" class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">Nº PESS.</label>
@@ -182,6 +182,12 @@
                min="1" step="1" required value="1"
                class="input-field"
                oninput="this.value = this.value.replace(/[^0-9]/g,'');" />
+      </div>
+
+      <div>
+        <label for="hora_venda" class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">HORÁRIO</label>
+        <input type="time" id="hora_venda" name="hora_venda"
+               class="input-field" style="font-size: 0.82rem; color: var(--acid); padding: 0.45rem 0.5rem;" />
       </div>
 
       <div>
@@ -273,6 +279,7 @@
       <thead>
         <tr>
           <th>#</th>
+          <th style="text-align:center;">HORA</th>
           <th>PESS.</th>
           <th>CANAL</th>
           <th>CIDADE</th>
@@ -287,6 +294,7 @@
         {% for v in vendas %}
         <tr>
           <td class="money-dim" style="font-size: 0.7rem; padding-right: 0.5rem;">{{ "%02d"|format(loop.index) }}</td>
+          <td style="text-align:center; font-size:0.75rem; color:var(--acid); font-family:'IBM Plex Mono'; font-weight:600;">{{ v.hora_venda or '—' }}</td>
           <td style="font-weight: 600; color: var(--txt); font-size: 0.85rem; text-align: center;">{{ v.num_pessoas }}</td>
           <td style="color: var(--dim); font-size: 0.75rem;">{{ v.canal_venda or '—' }}</td>
           <td style="color: var(--dim); font-size: 0.72rem;">{{ v.cidade_origem or '—' }}</td>
@@ -307,19 +315,28 @@
             {% endif %}
           </td>
           <td style="text-align: right; padding-right: 0.75rem;">
-            <form action="/dia/{{ data }}/venda/{{ v.id }}/excluir" method="POST"
-                  onsubmit="return confirm('CONFIRMAR EXCLUSÃO DA VENDA #{{ loop.index }}?');">
-              <button type="submit" class="btn btn-danger" style="font-size: 0.6rem; padding: 0.25rem 0.6rem;">
-                DEL
+            <div style="display:flex; gap:0.3rem; justify-content:flex-end; align-items:center;">
+              <button type="button" class="btn"
+                      onclick="openEditModal({{ v.id }}, '{{ data }}')"
+                      style="font-size:0.6rem; padding:0.25rem 0.6rem; background:transparent; border:1px solid rgba(204,255,0,0.45); color:var(--acid); transition:all 0.12s;"
+                      onmouseover="this.style.background='rgba(204,255,0,0.08)'"
+                      onmouseout="this.style.background='transparent'">
+                EDT
               </button>
-            </form>
+              <form action="/dia/{{ data }}/venda/{{ v.id }}/excluir" method="POST"
+                    onsubmit="return confirm('CONFIRMAR EXCLUSÃO DA VENDA #{{ loop.index }}?');">
+                <button type="submit" class="btn btn-danger" style="font-size: 0.6rem; padding: 0.25rem 0.6rem;">
+                  DEL
+                </button>
+              </form>
+            </div>
           </td>
         </tr>
         {% endfor %}
       </tbody>
       <tfoot>
         <tr style="background: var(--s2);">
-          <td colspan="6" style="font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--dim);">TOTAL GERAL DO DIA</td>
+          <td colspan="7" style="font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--dim);">TOTAL GERAL DO DIA</td>
           <td style="text-align: right;">
             <span class="money" style="font-size: 1.1rem; font-family: 'Bebas Neue'; letter-spacing: 0.05em;">R$ {{ "%.2f"|format(total_dia) | replace('.', ',') }}</span>
           </td>
@@ -583,7 +600,18 @@
     }
   }
 
+  // ── Default hora_venda to current time ──────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    const horaEl = document.getElementById('hora_venda');
+    if (horaEl && !horaEl.value) {
+      const now = new Date();
+      horaEl.value = now.toTimeString().slice(0, 5);
+    }
+  });
+
   // ── Prevent double-submit + validate before send ─────────────
+  let formDirty = false;
+
   document.getElementById('form-venda').addEventListener('submit', function(e) {
     // Validate city
     const cidEl = document.getElementById('cidade_origem');
@@ -612,11 +640,270 @@
       return;
     }
     document.getElementById('payment-error').style.display = 'none';
+    formDirty = false;
 
     const btn = document.getElementById('btn-nova-venda');
     btn.disabled = true;
     btn.innerHTML = '<svg class="spin" style="width:14px;height:14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle style="opacity:.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path style="opacity:.75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg> PROCESSANDO…';
   });
+
+  // ── Beforeunload warning when form has unsaved data ──────────
+  document.querySelectorAll('#form-venda input, #form-venda select').forEach(el => {
+    el.addEventListener('input',  () => { formDirty = true; });
+    el.addEventListener('change', () => { formDirty = true; });
+  });
+  window.addEventListener('beforeunload', e => {
+    if (formDirty) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  // ── Keyboard shortcuts ───────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    // Skip when typing inside any input/select/textarea
+    if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+
+    // N — show & focus the new sale form
+    if ((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey) {
+      if (IS_TODAY) {
+        const sec = document.getElementById('sale-form-section');
+        if (sec.style.display === 'none' || sec.style.display === '') {
+          sec.style.display = 'block';
+          sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setTimeout(() => document.getElementById('num_pessoas')?.focus(), 300);
+        }
+      }
+    }
+    // Esc — close edit modal
+    if (e.key === 'Escape') closeEditModal();
+  });
+
+  // Ctrl+Enter inside new sale form submits it
+  document.getElementById('form-venda').addEventListener('keydown', e => {
+    if (e.ctrlKey && e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('form-venda').requestSubmit();
+    }
+  });
+
+  // ── Edit modal logic ─────────────────────────────────────────
+  let modalPayRowCount = 0;
+
+  async function openEditModal(vendaId, dataStr) {
+    const modal = document.getElementById('edit-modal');
+    const body  = document.getElementById('edit-modal-body');
+    body.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--dim); font-family:\'IBM Plex Mono\'; letter-spacing:0.1em;">CARREGANDO…</div>';
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    try {
+      const res  = await fetch(`/api/venda/${vendaId}`);
+      const data = await res.json();
+      renderEditForm(data, dataStr);
+    } catch(err) {
+      body.innerHTML = '<div style="color:var(--danger); padding:2rem; font-family:\'IBM Plex Mono\';">⚠ Erro ao carregar venda.</div>';
+    }
+  }
+
+  function closeEditModal() {
+    document.getElementById('edit-modal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function renderEditForm(v, dataStr) {
+    const body = document.getElementById('edit-modal-body');
+    const action = `/dia/${dataStr}/venda/${v.id}/editar`;
+
+    body.innerHTML = `
+      <div class="section-header" style="border-bottom:1px solid var(--bd); margin-bottom:1.25rem;">
+        <span class="display" style="font-size:1.1rem; letter-spacing:0.08em; color:var(--txt);">EDITAR VENDA #${v.id}</span>
+        <span class="sys-label-dim" style="margin-left:auto;">${dataStr}</span>
+      </div>
+
+      <form id="form-edit" action="${action}" method="POST">
+        <!-- Row 1 -->
+        <div style="display:grid; grid-template-columns:90px 100px 1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
+          <div>
+            <label class="sys-label-dim" style="display:block; margin-bottom:0.35rem;">Nº PESS.</label>
+            <input type="number" name="num_pessoas" min="1" step="1" required
+                   value="${v.num_pessoas}" class="input-field"
+                   oninput="this.value=this.value.replace(/[^0-9]/g,'');" />
+          </div>
+          <div>
+            <label class="sys-label-dim" style="display:block; margin-bottom:0.35rem;">HORÁRIO</label>
+            <input type="time" name="hora_venda" value="${v.hora_venda || ''}"
+                   class="input-field" style="font-size:0.82rem; color:var(--acid); padding:0.45rem 0.5rem;" />
+          </div>
+          <div>
+            <label class="sys-label-dim" style="display:block; margin-bottom:0.35rem;">CANAL / DIVULGAÇÃO</label>
+            <input type="text" name="canal_venda" list="list-canais" class="input-field"
+                   value="${v.canal_venda || ''}" placeholder="Instagram, Google…" autocomplete="off" />
+          </div>
+          <div>
+            <label class="sys-label-dim" style="display:block; margin-bottom:0.35rem;">CIDADE DE ORIGEM</label>
+            <input type="text" name="cidade_origem" list="list-cidades" class="input-field"
+                   value="${v.cidade_origem || ''}" placeholder="Vitória-ES…" autocomplete="off" />
+          </div>
+        </div>
+
+        <!-- Row 2 -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
+          <div>
+            <label class="sys-label-dim" style="display:block; margin-bottom:0.35rem;">FOTÓGRAFO</label>
+            <input type="text" name="fotografo" list="list-equipe" class="input-field"
+                   value="${v.fotografo || ''}" placeholder="Nome…" autocomplete="off" />
+          </div>
+          <div>
+            <label class="sys-label-dim" style="display:block; margin-bottom:0.35rem;">VENDEDOR</label>
+            <input type="text" name="vendedor" list="list-equipe" class="input-field"
+                   value="${v.vendedor || ''}" placeholder="Nome…" autocomplete="off" />
+          </div>
+          <div>
+            <label class="sys-label-dim" style="display:block; margin-bottom:0.35rem;">VALOR TOTAL</label>
+            <div id="edit-valor-total" class="input-field money"
+                 style="display:flex; align-items:center; justify-content:space-between; cursor:default; background:rgba(0,255,102,0.04);">
+              <span id="edit-valor-total-txt" style="color:var(--neon); font-family:'Bebas Neue'; font-size:1.1rem; letter-spacing:0.05em;">R$ 0,00</span>
+              <span class="sys-label-dim" style="font-size:0.55rem;">AUTO</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment rows -->
+        <div style="margin-bottom:1rem;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+            <label class="sys-label-dim">FORMAS DE PAGAMENTO</label>
+            <button type="button" onclick="addModalPaymentRow()"
+                    style="background:transparent; border:1px solid var(--neon); color:var(--neon); font-family:'IBM Plex Mono'; font-size:0.6rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; padding:0.25rem 0.7rem; cursor:pointer;">
+              + ADICIONAR FORMA
+            </button>
+          </div>
+          <div id="modal-payment-rows" style="display:flex; flex-direction:column; gap:0.4rem;"></div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex; justify-content:flex-end; gap:0.75rem; border-top:1px solid var(--bd); padding-top:1rem;">
+          <button type="button" onclick="closeEditModal()" class="btn btn-ghost"
+                  style="font-size:0.72rem; padding:0.6rem 1.5rem; border-color:var(--muted); color:var(--muted);">
+            CANCELAR
+          </button>
+          <button type="submit" class="btn btn-primary" style="font-size:0.75rem; padding:0.65rem 2rem;">
+            ✓ SALVAR ALTERAÇÕES
+          </button>
+        </div>
+      </form>`;
+
+    // Populate payment rows
+    modalPayRowCount = 0;
+    const pags = v.pagamentos && v.pagamentos.length ? v.pagamentos : [{ forma_pagamento: v.forma_pagamento || 'DIN', valor: v.valor_venda }];
+    pags.forEach(p => addModalPaymentRow(p.forma_pagamento, p.valor));
+  }
+
+  function addModalPaymentRow(defaultForma, defaultValor) {
+    modalPayRowCount++;
+    const idx       = modalPayRowCount;
+    const container = document.getElementById('modal-payment-rows');
+    if (!container) return;
+
+    const row = document.createElement('div');
+    row.id = 'modal-pay-row-' + idx;
+    row.style.cssText = 'display:flex; gap:0.5rem; align-items:center;';
+
+    const sel = document.createElement('select');
+    sel.name = 'forma_pagamento_' + idx;
+    sel.style.cssText = 'font-family:"IBM Plex Mono"; font-size:0.75rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; background:var(--s2); border:1px solid var(--bd); color:var(--txt); padding:0.45rem 0.5rem; cursor:pointer; min-width:72px;';
+    FORMAS.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f;
+      opt.textContent = f;
+      if (f === (defaultForma || 'DIN')) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', recalcModalTotal);
+
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.name = 'valor_pagamento_' + idx;
+    inp.placeholder = 'R$ 0,00';
+    inp.className = 'input-field money';
+    inp.style.flex = '1';
+    if (defaultValor) {
+      // Format existing value
+      const raw = String(defaultValor);
+      const num = parseFloat(raw);
+      if (!isNaN(num)) {
+        const s = num.toFixed(2);
+        let [i2,d] = s.split('.');
+        i2 = i2.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+        inp.value = 'R$ ' + i2 + ',' + d;
+      }
+    }
+    inp.addEventListener('input', () => maskModalMoney(inp));
+
+    const rmBtn = document.createElement('button');
+    rmBtn.type = 'button';
+    rmBtn.innerHTML = '×';
+    rmBtn.style.cssText = 'background:transparent; border:1px solid var(--danger); color:var(--danger); font-family:"IBM Plex Mono"; font-size:0.9rem; font-weight:700; width:30px; height:30px; cursor:pointer; flex-shrink:0; line-height:1;';
+    rmBtn.onmouseover = () => { rmBtn.style.background='rgba(255,59,48,0.12)'; };
+    rmBtn.onmouseout  = () => { rmBtn.style.background='transparent'; };
+    rmBtn.onclick = () => { row.remove(); recalcModalTotal(); };
+    if (idx === 1) rmBtn.style.visibility = 'hidden';
+
+    row.appendChild(sel);
+    row.appendChild(inp);
+    row.appendChild(rmBtn);
+    container.appendChild(row);
+    recalcModalTotal();
+  }
+
+  function maskModalMoney(el) {
+    let v = el.value.replace(/\D/g, '');
+    if (!v) { el.value = ''; recalcModalTotal(); return; }
+    v = (parseInt(v, 10) / 100).toFixed(2);
+    let [i, d] = v.split('.');
+    i = i.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    el.value = 'R$ ' + i + ',' + d;
+    recalcModalTotal();
+  }
+
+  function recalcModalTotal() {
+    let total = 0, idx2 = 1;
+    while (true) {
+      const inp = document.querySelector(`[name="valor_pagamento_${idx2}"]`);
+      if (!inp || !document.getElementById('modal-payment-rows')?.contains(inp)) break;
+      const raw = inp.value.replace(/[R$\s.]/g,'').replace(',','.');
+      total += parseFloat(raw) || 0;
+      idx2++;
+    }
+    const el = document.getElementById('edit-valor-total-txt');
+    if (!el) return;
+    const s = total.toFixed(2);
+    let [i,d] = s.split('.');
+    i = i.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+    el.textContent = 'R$ ' + i + ',' + d;
+  }
 </script>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     EDIT MODAL OVERLAY
+══════════════════════════════════════════════════════════ -->
+<div id="edit-modal"
+     style="display:none; position:fixed; inset:0; z-index:500; background:rgba(0,0,0,0.88);
+            align-items:center; justify-content:center; padding:1.5rem;"
+     onclick="if(event.target===this) closeEditModal()">
+
+  <div style="background:var(--s1); border:1px solid var(--bd); border-top:3px solid var(--acid);
+              width:100%; max-width:780px; max-height:90vh; overflow-y:auto;
+              position:relative; padding:1.5rem;"
+       onclick="event.stopPropagation()">
+
+    <!-- Close X -->
+    <button onclick="closeEditModal()"
+            style="position:absolute; top:1rem; right:1rem; background:transparent; border:1px solid var(--bd);
+                   color:var(--dim); font-family:'IBM Plex Mono'; font-size:0.9rem; font-weight:700;
+                   width:28px; height:28px; cursor:pointer; line-height:1; z-index:1;"
+            title="Fechar (Esc)">×</button>
+
+    <div id="edit-modal-body"></div>
+  </div>
+</div>
 
 {% endblock %}

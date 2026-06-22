@@ -167,4 +167,18 @@
 
 </div>
 
+<!-- Action bar -->
+<div style="display:flex; align-items:center; justify-content:space-between; margin-top:1rem; padding: 0.65rem 1rem; background:var(--s2); border:1px solid var(--bd);" class="fade-in" style="animation-delay:0.12s;">
+  <div class="sys-label-dim">EXPORTAR · ANALISAR</div>
+  <div style="display:flex; gap:0.5rem;">
+    <a href="/relatorios/{{ ano }}" class="btn btn-ghost" style="font-size:0.62rem; padding:0.35rem 0.85rem;">
+      ◈ VER ANO {{ ano }}
+    </a>
+    <a href="/mes/{{ ano }}/{{ mes }}/csv" class="btn"
+       style="font-size:0.62rem; padding:0.35rem 0.9rem; background:transparent; border:1px solid var(--acid); color:var(--acid);">
+      ↓ EXPORTAR CSV
+    </a>
+  </div>
+</div>
+
 {% endblock %}
