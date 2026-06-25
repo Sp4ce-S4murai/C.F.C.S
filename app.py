@@ -5,7 +5,8 @@ import io
 import secrets
 from datetime import date, timedelta, datetime
 import calendar
-from urllib.parse import quote
+
+
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, Response
 from database import (
     get_connection, init_db, seed_defaults, backup_db,
@@ -14,6 +15,7 @@ from database import (
 )
 
 app = Flask(__name__)
+app.config['JSON_AS_ASCII'] = False
 
 # ---------------------------------------------------------------------------
 # Secret key — persistent & unique per installation, never hardcoded
@@ -80,32 +82,62 @@ def get_or_create_caixa(data_str: str) -> dict:
         return {"data": data_str, "abertura_caixa": abertura, "fechamento_caixa": abertura}
 
 
+def _recalc_single_day(conn, data_str: str) -> float:
+    """Recalculate fechamento for a single day. Returns the new fechamento value."""
+    caixa = conn.execute(
+        "SELECT abertura_caixa FROM caixa_diario WHERE data = ?", (data_str,)
+    ).fetchone()
+    abertura = caixa["abertura_caixa"] if caixa else 0.0
+
+    total_dinheiro = conn.execute(
+        """SELECT COALESCE(SUM(vp.valor), 0) as total
+           FROM venda_pagamentos vp
+           JOIN vendas v ON v.id = vp.venda_id
+           WHERE v.data_venda = ? AND vp.forma_pagamento = 'DIN'""",
+        (data_str,),
+    ).fetchone()["total"]
+
+    total_retiradas = conn.execute(
+        "SELECT COALESCE(SUM(valor),0) as total FROM retiradas_caixa WHERE data = ?",
+        (data_str,),
+    ).fetchone()["total"]
+
+    fechamento = abertura + total_dinheiro - total_retiradas
+    conn.execute(
+        "UPDATE caixa_diario SET fechamento_caixa = ? WHERE data = ?",
+        (fechamento, data_str),
+    )
+    return fechamento
+
+
 def recalc_fechamento(data_str: str):
-    """Recalculate fechamento = abertura + total vendas DIN (via venda_pagamentos) - retiradas."""
+    """Recalculate fechamento for the given day AND propagate changes to all
+    subsequent days that already exist in caixa_diario.
+
+    When a retirada (or venda) is added/edited/removed on a past day, the
+    fechamento of that day changes.  Since the next day's abertura equals
+    the previous day's fechamento, we must cascade the update forward through
+    every existing future day so their abertura and fechamento stay correct.
+    """
     with get_connection() as conn:
-        caixa = conn.execute(
-            "SELECT abertura_caixa FROM caixa_diario WHERE data = ?", (data_str,)
-        ).fetchone()
-        abertura = caixa["abertura_caixa"] if caixa else 0.0
+        # 1. Recalculate the target day
+        fechamento = _recalc_single_day(conn, data_str)
 
-        total_dinheiro = conn.execute(
-            """SELECT COALESCE(SUM(vp.valor), 0) as total
-               FROM venda_pagamentos vp
-               JOIN vendas v ON v.id = vp.venda_id
-               WHERE v.data_venda = ? AND vp.forma_pagamento = 'DIN'""",
+        # 2. Get all subsequent days that already exist, in chronological order
+        future_days = conn.execute(
+            "SELECT data FROM caixa_diario WHERE data > ? ORDER BY data ASC",
             (data_str,),
-        ).fetchone()["total"]
+        ).fetchall()
 
-        total_retiradas = conn.execute(
-            "SELECT COALESCE(SUM(valor),0) as total FROM retiradas_caixa WHERE data = ?",
-            (data_str,),
-        ).fetchone()["total"]
-
-        fechamento = abertura + total_dinheiro - total_retiradas
-        conn.execute(
-            "UPDATE caixa_diario SET fechamento_caixa = ? WHERE data = ?",
-            (fechamento, data_str),
-        )
+        # 3. Cascade: each future day's abertura = previous day's fechamento
+        prev_fechamento = fechamento
+        for row in future_days:
+            next_data = row["data"]
+            conn.execute(
+                "UPDATE caixa_diario SET abertura_caixa = ? WHERE data = ?",
+                (prev_fechamento, next_data),
+            )
+            prev_fechamento = _recalc_single_day(conn, next_data)
 
 
 def get_retiradas_do_dia(data_str: str) -> list[dict]:
@@ -148,104 +180,53 @@ def get_vendas_do_dia(data_str: str) -> list[dict]:
     return vendas
 
 
-def build_whatsapp_message(data_str: str, caixa: dict, vendas: list, subtotais: dict, retiradas: list) -> str:
-    """Build a formatted WhatsApp message with the daily sales report."""
+def build_whatsapp_message(data_str, caixa, vendas, subtotais):
+    """Monta mensagem simples para WhatsApp. Texto puro, sem emojis."""
     d = datetime.strptime(data_str, "%Y-%m-%d")
+    dias = ["Segunda-feira", "Terça-feira", "Quarta-feira",
+            "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
+    dia_semana = dias[d.weekday()]
     data_fmt = d.strftime("%d/%m/%Y")
+
     total = sum(v["valor_venda"] for v in vendas)
+    total_pessoas = sum(v["num_pessoas"] for v in vendas)
+    num_vendas = len(vendas)
+    ticket = total / num_vendas if num_vendas else 0.0
 
-    forma_labels = {
-        "DIN": "💵 Dinheiro",
-        "PIX": "📱 PIX",
-        "CRE": "💳 Crédito",
-        "DEB": "🏧 Débito",
-        "VCH": "🎫 Voucher",
-    }
-
-    lines = [
-        "*╔══════════════════════════╗*",
-        "*║   RELATÓRIO DE CAIXA    ║*",
-        "*╚══════════════════════════╝*",
-        "",
-        f"📅 *DATA:* {data_fmt}",
-        f"🏢 *Estudio Rua Coberta*",
-        "",
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━",
-        "*💰 RESUMO DO CAIXA (FÍSICO)*",
-        f"  • Abertura (DIN):    *{fmt_brl(caixa['abertura_caixa'])}*",
-        f"  • Vendas (DIN):      *{fmt_brl(subtotais.get('DIN', 0.0))}*",
-    ]
-
-    if retiradas:
-        total_retiradas = sum(r["valor"] for r in retiradas)
-        lines.append(f"  • Retiradas:         *-{fmt_brl(total_retiradas)}*")
-
-    lines.append(f"  • Saldo (Fechamento):*{fmt_brl(caixa['fechamento_caixa'])}*")
-    lines.append("")
-    lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    lines.append("*📊 RESULTADO TOTAL DO DIA*")
-    lines.append(f"  • Faturamento Total: *{fmt_brl(total)}*")
-    lines.append("")
-    lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    lines.append("*💳 FORMAS DE PAGAMENTO*")
-
-    for forma in ["DIN", "PIX", "CRE", "DEB", "VCH"]:
-        val = subtotais.get(forma, 0.0)
+    # Formas de pagamento ativas
+    forma_nome = {"DIN": "Dinheiro", "PIX": "PIX", "CRE": "Crédito", "DEB": "Débito", "VCH": "Voucher"}
+    formas_txt = ""
+    for f in ["DIN", "PIX", "CRE", "DEB", "VCH"]:
+        val = subtotais.get(f, 0.0)
         if val > 0:
-            label = forma_labels.get(forma, forma)
-            lines.append(f"  {label}: *{fmt_brl(val)}*")
+            pct = int(val / total * 100) if total > 0 else 0
+            formas_txt += f"  {forma_nome[f]}: *{fmt_brl(val)}* ({pct}%)\n"
 
-    if not any(subtotais.get(f, 0) > 0 for f in subtotais):
-        lines.append("  _Nenhum pagamento registrado_")
+    msg = f"""*RELATÓRIO DIÁRIO*
+*Estúdio Rua Coberta*
 
-    if vendas:
-        lines += [
-            "",
-            "━━━━━━━━━━━━━━━━━━━━━━━━━━",
-            f"*🛒 VENDAS — {len(vendas)} lançamento{'s' if len(vendas) != 1 else ''}*",
-        ]
-        for i, v in enumerate(vendas, 1):
-            lines.append("")
-            pagamentos = v.get("pagamentos", [])
-            if len(pagamentos) > 1:
-                pag_str = " + ".join(
-                    f"{p['forma_pagamento']} {fmt_brl(p['valor'])}" for p in pagamentos
-                )
-            elif pagamentos:
-                pag_str = f"{pagamentos[0]['forma_pagamento']}"
-            else:
-                pag_str = v['forma_pagamento']
-            hora = v.get("hora_venda", "") or ""
-            hora_str = f" · {hora}" if hora else ""
-            lines.append(
-                f"*#{i}* — {fmt_brl(v['valor_venda'])} | "
-                f"{pag_str} | {v['num_pessoas']} pess.{hora_str}"
-            )
-            parts = []
-            if v.get("cidade_origem"):
-                parts.append(f"📍 {v['cidade_origem']}")
-            if v.get("canal_venda"):
-                parts.append(f"📢 {v['canal_venda']}")
-            if v.get("fotografo"):
-                parts.append(f"📷 {v['fotografo']}")
-            if v.get("vendedor"):
-                parts.append(f"🤝 {v['vendedor']}")
-            if parts:
-                lines.append("   " + " · ".join(parts))
-    else:
-        lines += [
-            "",
-            "━━━━━━━━━━━━━━━━━━━━━━━━━━",
-            "_Nenhuma venda registrada neste dia._",
-        ]
+*{dia_semana}*, {data_fmt}
 
-    lines += [
-        "",
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━",
-        "_C.F.C.S · by OCTO_",
-    ]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*CAIXA FÍSICO (DINHEIRO)*
+  Abertura: *{fmt_brl(caixa['abertura_caixa'])}*
+  Entradas DIN: *{fmt_brl(subtotais.get('DIN', 0.0))}*
+  Fechamento: *{fmt_brl(caixa['fechamento_caixa'])}*
 
-    return "\n".join(lines)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*RESULTADO DO DIA*
+  Faturamento Total: *{fmt_brl(total)}*
+  Vendas realizadas: *{num_vendas}*
+  Pessoas atendidas: *{total_pessoas}*
+  Ticket médio: *{fmt_brl(ticket)}*
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*FORMAS DE PAGAMENTO*
+{formas_txt}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+_Relatório gerado automaticamente_
+_C.F.C.S · by OCTO_"""
+
+    return msg
 
 
 # ---------------------------------------------------------------------------
@@ -538,30 +519,24 @@ def excluir_retirada(data, retirada_id):
 
 @app.route("/dia/<data>/whatsapp")
 def whatsapp_enviar(data):
-    """Generate WhatsApp message with daily report and redirect to wa.me."""
+    """Retorna texto do relatório + número como JSON."""
     try:
         datetime.strptime(data, "%Y-%m-%d")
     except ValueError:
-        flash("Data inválida.", "error")
-        return redirect(url_for("index"))
+        return jsonify({"error": "Data inválida."}), 400
 
     numero = get_whatsapp_numero()
     if not numero:
-        flash("Configure o número do WhatsApp no Painel Administrativo → aba SISTEMA.", "error")
-        return redirect(url_for("diario", data=data))
+        return jsonify({"error": "Configure o número do WhatsApp no Admin."}), 400
 
     caixa     = get_or_create_caixa(data)
     vendas    = get_vendas_do_dia(data)
-    retiradas = get_retiradas_do_dia(data)
     subtotais = get_subtotais(data)
 
-    message = build_whatsapp_message(data, caixa, vendas, subtotais, retiradas)
-    encoded = quote(message)
+    msg = build_whatsapp_message(data, caixa, vendas, subtotais)
     numero_clean = "".join(filter(str.isdigit, numero))
-    wa_url = f"https://wa.me/{numero_clean}?text={encoded}"
 
-    return redirect(wa_url)
-
+    return jsonify({"text": msg, "numero": numero_clean})
 
 # ---------------------------------------------------------------------------
 # Routes – Calendário Mensal
