@@ -429,10 +429,11 @@
 
       <!-- Nav links -->
       <nav style="display: flex; align-items: center; gap: 0.2rem;">
-        <a id="nav-diario"     href="/"           class="nav-link {% if request.endpoint in ('diario','index') %}active{% endif %}">[01] DIÁRIO</a>
-        <a id="nav-mes"        href="/mes"        class="nav-link {% if request.endpoint in ('mes','exportar_csv') %}active{% endif %}">[02] CALENDÁRIO</a>
-        <a id="nav-relatorios" href="/relatorios" class="nav-link {% if request.endpoint == 'relatorios' %}active{% endif %}">[03] RELATÓRIOS</a>
-        <a id="nav-admin"      href="/admin"      class="nav-link {% if request.endpoint in ('admin','admin_add','admin_delete','admin_whatsapp') %}active{% endif %}">[04] ADMIN</a>
+        <a id="nav-diario"     href="/"           class="nav-link {% if request.endpoint and request.endpoint.startswith('diario.') %}active{% endif %}">[01] DIÁRIO</a>
+        <a id="nav-mes"        href="/mes"        class="nav-link {% if request.endpoint and request.endpoint.startswith('calendario.') %}active{% endif %}">[02] CALENDÁRIO</a>
+        <a id="nav-relatorios" href="/relatorios" class="nav-link {% if request.endpoint and request.endpoint.startswith('relatorios.') %}active{% endif %}">[03] RELATÓRIOS</a>
+        <a id="nav-mapa"       href="/mapa"        class="nav-link {% if request.endpoint and request.endpoint.startswith('mapa.') %}active{% endif %}">[04] MAPA</a>
+        <a id="nav-admin"      href="/admin"      class="nav-link {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}">[05] ADMIN</a>
       </nav>
 
       <!-- Status dot -->
