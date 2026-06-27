@@ -8,7 +8,7 @@
 ══════════════════════════════════════════════════════════ -->
 <div class="fade-in" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
 
-  <a href="/mes/{{ prev_ano }}/{{ prev_mes }}" class="btn btn-ghost" style="font-size: 0.65rem;">
+  <a href="/mes/{{ prev_ano }}/{{ prev_mes }}" class="btn btn-ghost" style="padding: 0.5rem 1.1rem;">
     <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
       <path stroke-linecap="square" d="M15 19l-7-7 7-7"/>
     </svg>
@@ -24,7 +24,7 @@
     </div>
   </div>
 
-  <a href="/mes/{{ next_ano }}/{{ next_mes }}" class="btn btn-ghost" style="font-size: 0.65rem;">
+  <a href="/mes/{{ next_ano }}/{{ next_mes }}" class="btn btn-ghost" style="padding: 0.5rem 1.1rem;">
     MÊS SEG.
     <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
       <path stroke-linecap="square" d="M9 5l7 7-7 7"/>
@@ -43,8 +43,8 @@
   <div style="display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 2px solid var(--bd);">
     {% for wd in weekdays %}
       <div style="padding: 0.7rem 0; text-align: center; border-right: 1px solid var(--bd);
-                  {% if loop.index >= 6 %}color: var(--neon); {% else %}color: var(--muted);{% endif %}
-                  font-family: 'IBM Plex Mono'; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.2em;
+                  {% if loop.index >= 6 %}color: var(--neon); {% else %}color: var(--dim);{% endif %}
+                  font-family: 'IBM Plex Mono'; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em;
                   {% if loop.last %}border-right: none;{% endif %}">
         {{ wd }}
       </div>
@@ -81,30 +81,30 @@
               <span style="
                 {% if is_today %}
                   background: var(--neon); color: #050505; padding: 0 0.35rem;
-                  font-family: 'Bebas Neue'; font-size: 1.15rem; letter-spacing: 0.05em;
+                  font-family: 'Bebas Neue'; font-size: 1.35rem; letter-spacing: 0.05em;
                 {% elif is_weekend %}
-                  color: var(--neon); font-family: 'Bebas Neue'; font-size: 1.1rem; letter-spacing: 0.05em;
+                  color: var(--neon); font-family: 'Bebas Neue'; font-size: 1.3rem; letter-spacing: 0.05em;
                 {% else %}
-                  color: var(--dim); font-family: 'Bebas Neue'; font-size: 1.1rem; letter-spacing: 0.05em;
+                  color: var(--dim); font-family: 'Bebas Neue'; font-size: 1.3rem; letter-spacing: 0.05em;
                 {% endif %}
               ">{{ "%02d"|format(day) }}</span>
               {% if is_today %}
-                <span style="font-family: 'IBM Plex Mono'; font-size: 0.5rem; letter-spacing: 0.12em; color: var(--neon); text-transform: uppercase;">HOJE</span>
+                <span style="font-family: 'IBM Plex Mono'; font-size: 0.68rem; letter-spacing: 0.12em; color: var(--neon); text-transform: uppercase;">HOJE</span>
               {% endif %}
             </div>
 
             <!-- Sales info -->
             {% if has_vendas %}
               <div style="flex: 1; display: flex; flex-direction: column; gap: 0.2rem;">
-                <div style="color: var(--neon); font-family: 'IBM Plex Mono'; font-size: 0.72rem; font-weight: 700;">
+                <div style="color: var(--neon); font-family: 'IBM Plex Mono'; font-size: 0.88rem; font-weight: 700;">
                   R$ {{ "%.0f"|format(info.get('total_vendas', 0)) }}
                 </div>
-                <div style="color: var(--dim); font-family: 'IBM Plex Mono'; font-size: 0.6rem; letter-spacing: 0.06em;">
+                <div style="color: var(--dim); font-family: 'IBM Plex Mono'; font-size: 0.75rem; letter-spacing: 0.06em;">
                   {{ info.get('num_vendas', 0) }} VDA{% if info.get('num_vendas', 0) != 1 %}S{% endif %}
                 </div>
                 {% if info.get('fechamento_caixa', 0) > 0 %}
-                  <div style="margin-top: auto; padding-top: 0.3rem; border-top: 1px solid var(--muted);">
-                    <span style="color: var(--muted); font-family: 'IBM Plex Mono'; font-size: 0.58rem; letter-spacing: 0.04em;">
+                  <div style="margin-top: auto; padding-top: 0.3rem; border-top: 1px solid var(--bd2);">
+                    <span style="color: var(--dim); font-family: 'IBM Plex Mono'; font-size: 0.72rem; letter-spacing: 0.04em;">
                       FCH R$ {{ "%.0f"|format(info.get('fechamento_caixa', 0)) }}
                     </span>
                   </div>
@@ -114,7 +114,7 @@
               <div style="width: 4px; height: 4px; border-radius: 50% !important; background: var(--neon); margin-top: 0.3rem;"></div>
             {% else %}
               <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
-                <span style="color: var(--muted); font-family: 'IBM Plex Mono'; font-size: 0.65rem;">—</span>
+                <span style="color: var(--muted); font-family: 'IBM Plex Mono'; font-size: 0.82rem;">—</span>
               </div>
             {% endif %}
 
@@ -171,11 +171,11 @@
 <div style="display:flex; align-items:center; justify-content:space-between; margin-top:1rem; padding: 0.65rem 1rem; background:var(--s2); border:1px solid var(--bd);" class="fade-in" style="animation-delay:0.12s;">
   <div class="sys-label-dim">EXPORTAR · ANALISAR</div>
   <div style="display:flex; gap:0.5rem;">
-    <a href="/relatorios/{{ ano }}" class="btn btn-ghost" style="font-size:0.62rem; padding:0.35rem 0.85rem;">
+    <a href="/relatorios/{{ ano }}" class="btn btn-ghost" style="font-size:0.78rem; padding:0.45rem 1.1rem;">
       ◈ VER ANO {{ ano }}
     </a>
     <a href="/mes/{{ ano }}/{{ mes }}/csv" class="btn"
-       style="font-size:0.62rem; padding:0.35rem 0.9rem; background:transparent; border:1px solid var(--acid); color:var(--acid);">
+       style="font-size:0.78rem; padding:0.45rem 1.1rem; background:transparent; border:1px solid var(--acid); color:var(--acid);">
       ↓ EXPORTAR CSV
     </a>
   </div>

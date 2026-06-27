@@ -103,7 +103,7 @@ def nova_venda(data):
     pagamentos = parse_pagamentos_do_form()
 
     if not pagamentos:
-        flash("Valor da venda deve ser maior que zero.", "error")
+        flash("Nenhuma forma de pagamento informada.", "error")
         return redirect(url_for("diario.pagina_diario", data=data))
 
     # Validar cidade contra base IBGE
@@ -143,7 +143,7 @@ def rota_editar_venda(data, venda_id):
     pagamentos = parse_pagamentos_do_form()
 
     if not pagamentos:
-        flash("Valor da venda deve ser maior que zero.", "error")
+        flash("Nenhuma forma de pagamento informada.", "error")
         return redirect(url_for("diario.pagina_diario", data=data))
 
     # Validar cidade contra base IBGE

@@ -9,7 +9,7 @@
   <div class="section-header mb-6">
     <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
       <div>
-        <h1 class="display" style="font-size: 1.8rem; letter-spacing: 0.05em; margin: 0; color: var(--txt);">
+        <h1 class="display" style="font-size: 2.2rem; letter-spacing: 0.05em; margin: 0; color: var(--txt);">
           MAPA DE CALOR DEMOGRÁFICO
         </h1>
         <p class="sys-label-dim" style="margin: 0; margin-top: 0.2rem;">
@@ -30,14 +30,14 @@
       <div class="card bracketed p-6 relative flex flex-col items-center justify-center min-h-[520px]">
         
         <!-- Marcador de Canto Superior Direito -->
-        <div class="absolute top-3 right-4 font-mono text-[10px] text-dim select-none">
+        <div class="absolute top-3 right-4 font-mono text-xs text-dim select-none">
           SYS.GEO // MAP_VIEW_2D
         </div>
 
         <!-- Título do Card -->
         <div class="w-full text-left mb-4 border-b border-border pb-3">
           <span class="sys-label">MAPA INTERATIVO DO BRASIL</span>
-          <div class="text-xs text-dim mt-0.5">Passe o mouse para ver métricas. Clique para detalhar cidades.</div>
+          <div class="text-sm text-dim mt-0.5">Passe o mouse para ver métricas. Clique para detalhar cidades.</div>
         </div>
 
         <!-- Container do SVG para controle de responsividade e centralização -->
@@ -234,7 +234,7 @@
 
         <!-- LEGENDA DO MAPA (GRADIENTE TÉRMICO CYBER) -->
         <div class="w-full mt-4 border-t border-border pt-4">
-          <div class="flex justify-between items-center text-[9px] text-dim font-mono mb-2">
+          <div class="flex justify-between items-center text-xs text-dim font-mono mb-2">
             <span>ATIVIDADE: NENHUMA</span>
             <span>INTENSIDADE MÁXIMA</span>
           </div>
@@ -247,7 +247,7 @@
             <div style="flex: 1; background: #ccff00;"></div> <!-- Incandescente -->
             <div style="flex: 1; background: #ffb800;"></div> <!-- Máxima -->
           </div>
-          <div class="flex justify-between items-center text-[9px] text-dim font-mono mt-1">
+          <div class="flex justify-between items-center text-xs text-dim font-mono mt-1">
             <span>R$ 0,00</span>
             <span id="legend-max">Máx. do Período</span>
           </div>
@@ -261,7 +261,7 @@
       
       <!-- CARD 1: FILTROS DE CONTROLE -->
       <div class="card bracketed p-5 relative">
-        <div class="absolute top-3 right-4 font-mono text-[9px] text-dim select-none">
+        <div class="absolute top-3 right-4 font-mono text-xs text-dim select-none">
           SYS.FILTERS
         </div>
         <span class="sys-label">PAINEL DE CONTROLES</span>
@@ -270,7 +270,7 @@
           <!-- Seletor de Ano -->
           <div>
             <label class="sys-label-dim block mb-1">Ano</label>
-            <select id="select-ano" class="input-field py-1.5 px-2 text-xs">
+            <select id="select-ano" class="input-field py-2 px-2.5 h-10 text-sm">
               <option value="todos">Todos os Anos</option>
               {% for a in anos_disponiveis %}
                 <option value="{{ a }}" {% if a == ano_atual %}selected{% endif %}>{{ a }}</option>
@@ -281,7 +281,7 @@
           <!-- Seletor de Mês -->
           <div>
             <label class="sys-label-dim block mb-1">Mês</label>
-            <select id="select-mes" class="input-field py-1.5 px-2 text-xs">
+            <select id="select-mes" class="input-field py-2 px-2.5 h-10 text-sm">
               <option value="todos">Todos os Meses</option>
               <option value="1" {% if mes_atual == 1 %}selected{% endif %}>Janeiro</option>
               <option value="2" {% if mes_atual == 2 %}selected{% endif %}>Fevereiro</option>
@@ -301,7 +301,7 @@
           <!-- Seletor de Métrica -->
           <div>
             <label class="sys-label-dim block mb-1">Métrica Térmica</label>
-            <select id="select-metrica" class="input-field py-1.5 px-2 text-xs">
+            <select id="select-metrica" class="input-field py-2 px-2.5 h-10 text-sm">
               <option value="vendas">Atendimentos</option>
               <option value="faturamento">Faturamento (R$)</option>
               <option value="clientes">Clientes</option>
@@ -312,23 +312,23 @@
 
       <!-- CARD 2: RANKINGS E DETALHES -->
       <div class="card bracketed p-5 relative flex-1 flex flex-col min-h-[380px]">
-        <div class="absolute top-3 right-4 font-mono text-[9px] text-dim select-none">
+        <div class="absolute top-3 right-4 font-mono text-xs text-dim select-none">
           SYS.RANKINGS
         </div>
         
         <!-- Tabs dos Rankings -->
         <div class="flex border-b border-border pb-2 gap-4">
-          <button id="btn-tab-estados" class="font-mono text-xs font-bold tracking-wider text-neon border-b-2 border-neon pb-1 focus:outline-none uppercase">
+          <button id="btn-tab-estados" class="font-mono text-sm font-bold tracking-wider text-neon border-b-2 border-neon pb-1 focus:outline-none uppercase">
             [1] ESTADOS
           </button>
-          <button id="btn-tab-cidades" class="font-mono text-xs font-bold tracking-wider text-dim hover:text-txt pb-1 focus:outline-none uppercase">
+          <button id="btn-tab-cidades" class="font-mono text-sm font-bold tracking-wider text-dim hover:text-txt pb-1 focus:outline-none uppercase">
             [2] CIDADES
           </button>
         </div>
 
         <!-- CONTEÚDO 1: RANKING ESTADOS -->
         <div id="tab-content-estados" class="mt-4 flex-1 flex flex-col gap-3">
-          <div class="sys-label-dim text-[10px] mb-1">PARTICIPAÇÃO NACIONAL POR ESTADO</div>
+          <div class="sys-label-dim text-xs mb-1">PARTICIPAÇÃO NACIONAL POR ESTADO</div>
           <div id="estados-list" class="flex-grow overflow-y-auto max-h-[360px] pr-1 flex flex-col gap-3.5">
             <!-- Preenchido via Javascript -->
           </div>
@@ -337,8 +337,8 @@
         <!-- CONTEÚDO 2: RANKING CIDADES (Hacking de Cidades) -->
         <div id="tab-content-cidades" class="mt-4 flex-1 flex flex-col gap-3 hidden">
           <div style="display: flex; align-items: center; justify-content: space-between;" class="mb-1">
-            <div id="cidades-header" class="sys-label-dim text-[10px]">CIDADES: BRASIL (TODAS)</div>
-            <button id="btn-clear-state" class="btn btn-danger py-0.5 px-1.5 text-[8px] tracking-tight font-mono hidden focus:outline-none">
+            <div id="cidades-header" class="sys-label-dim text-xs">CIDADES: BRASIL (TODAS)</div>
+            <button id="btn-clear-state" class="btn btn-danger py-1 px-2 text-xs tracking-tight font-mono hidden focus:outline-none">
               VER NACIONAL
             </button>
           </div>

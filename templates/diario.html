@@ -8,7 +8,7 @@
 ══════════════════════════════════════════════════════════ -->
 <div class="fade-in" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; gap: 1rem;">
 
-  <a href="/dia/{{ prev_day }}" class="btn btn-ghost" style="font-size: 0.65rem;">
+  <a href="/dia/{{ prev_day }}" class="btn btn-ghost" style="padding: 0.5rem 1.1rem;">
     <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
       <path stroke-linecap="square" stroke-linejoin="miter" d="M15 19l-7-7 7-7"/>
     </svg>
@@ -19,16 +19,16 @@
     <div class="sys-label" style="margin-bottom: 0.3rem; justify-content: center; display: flex; align-items: center; gap: 0.5rem;">
       SISTEMA DE CAIXA
       {% if data == today %}
-        <span style="border: 1px solid var(--neon); padding: 0.05rem 0.4rem; font-size: 0.55rem; background: rgba(0,255,102,0.08);">● HOJE</span>
+        <span style="border: 1px solid var(--neon); padding: 0.05rem 0.4rem; font-size: 0.72rem; background: rgba(0,255,102,0.08);">● HOJE</span>
       {% else %}
-        <span style="border: 1px solid var(--warn); color: var(--warn); padding: 0.05rem 0.4rem; font-size: 0.55rem; background: rgba(255,184,0,0.06);">⚡ RETROATIVO</span>
+        <span style="border: 1px solid var(--warn); color: var(--warn); padding: 0.05rem 0.4rem; font-size: 0.72rem; background: rgba(255,184,0,0.06);">⚡ RETROATIVO</span>
       {% endif %}
     </div>
     <div class="display" style="font-size: 2.4rem; letter-spacing: 0.06em; color: var(--txt); line-height: 1;">{{ data_fmt }}</div>
     <div class="sys-label-dim" style="margin-top: 0.2rem;">{{ data }}</div>
   </div>
 
-  <a href="/dia/{{ next_day }}" class="btn btn-ghost" style="font-size: 0.65rem;">
+  <a href="/dia/{{ next_day }}" class="btn btn-ghost" style="padding: 0.5rem 1.1rem;">
     PRÓXIMO
     <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
       <path stroke-linecap="square" stroke-linejoin="miter" d="M9 5l7 7-7 7"/>
@@ -49,17 +49,17 @@
     <div class="metric-value money-warn" style="font-size: 2rem;">
       R$ {{ "%.2f"|format(caixa.abertura_caixa) | replace('.', ',') }}
     </div>
-    <button onclick="toggleAberturaForm()" style="margin-top: 0.6rem; background: transparent; border: none; color: var(--warn); font-family: 'IBM Plex Mono'; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; padding: 0; opacity: 0.7;">
+    <button onclick="toggleAberturaForm()" style="margin-top: 0.6rem; background: transparent; border: none; color: var(--warn); font-family: 'IBM Plex Mono'; font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; padding: 0; opacity: 0.85;">
       [EDITAR ABERTURA]
     </button>
     <div id="abertura-form" style="display: none; margin-top: 0.6rem;">
       <form action="/dia/{{ data }}/abertura" method="POST" style="display: flex; gap: 0.4rem;">
         <input type="text" name="abertura_caixa" id="input-abertura"
-               class="input-field" style="font-size: 0.78rem; padding: 0.4rem 0.6rem; flex: 1;"
+               class="input-field" style="font-size: 0.88rem; padding: 0.4rem 0.6rem; flex: 1;"
                placeholder="R$ 0,00"
                value="R$ {{ '%.2f'|format(caixa.abertura_caixa) | replace('.', ',') }}"
                oninput="maskMoney(this)" />
-        <button type="submit" class="btn btn-ghost-warn" style="padding: 0.4rem 0.75rem; font-size: 0.65rem;">OK</button>
+        <button type="submit" class="btn btn-ghost-warn" style="padding: 0.4rem 0.75rem;">OK</button>
       </form>
     </div>
   </div>
@@ -92,7 +92,7 @@
         {% set val = subtotais[forma] %}
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.15rem 0; border-bottom: 1px solid var(--muted);">
           <span class="badge badge-{{ forma|lower }}">{{ forma }}</span>
-          <span class="money-dim" style="font-size: 0.72rem; {% if val > 0 %}color: var(--txt);{% endif %}">
+          <span class="money-dim" style="font-size: 0.85rem; {% if val > 0 %}color: var(--txt);{% endif %}">
             R$ {{ "%.2f"|format(val) | replace('.', ',') }}
           </span>
         </div>
@@ -108,16 +108,16 @@
     RELATÓRIO GERADO AUTOMATICAMENTE · PERSISTÊNCIA DE CAIXA ATIVA
   </div>
   <div style="display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0;">
-    <a href="/mes" class="btn btn-ghost" style="padding: 0.35rem 0.85rem; font-size: 0.6rem;">◈ VER CALENDÁRIO</a>
+    <a href="/mes" class="btn btn-ghost" style="padding: 0.45rem 1rem; font-size: 0.75rem;">◈ VER CALENDÁRIO</a>
     {% if whatsapp_numero %}
-      <button type="button" onclick="abrirWhatsApp('{{ data }}')" class="btn btn-wa" style="padding: 0.35rem 0.85rem; font-size: 0.6rem;">
+      <button type="button" onclick="abrirWhatsApp('{{ data }}')" class="btn btn-wa" style="padding: 0.45rem 1rem; font-size: 0.75rem;">
         <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;flex-shrink:0;" fill="currentColor" viewBox="0 0 24 24">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
         </svg>
         ENVIAR RELATÓRIO
       </button>
     {% else %}
-      <a href="/admin" class="btn btn-ghost" style="padding: 0.35rem 0.85rem; font-size: 0.6rem; border-color: var(--muted); color: var(--dim);">
+      <a href="/admin" class="btn btn-ghost" style="padding: 0.45rem 1rem; font-size: 0.75rem; border-color: var(--muted); color: var(--dim);">
         ⚠ CONF. WHATSAPP
       </a>
     {% endif %}
@@ -225,8 +225,8 @@
         <label class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">VALOR TOTAL DA VENDA</label>
         <div id="valor-total-display" class="input-field money"
              style="display:flex; align-items:center; justify-content:space-between; cursor:default; user-select:none; background: rgba(0,255,102,0.04);">
-          <span id="valor-total-txt" style="color:var(--neon); font-family:'Bebas Neue'; font-size:1.1rem; letter-spacing:0.05em;">R$ 0,00</span>
-          <span class="sys-label-dim" style="font-size:0.55rem;">AUTO</span>
+          <span id="valor-total-txt" style="color:var(--neon); font-family:'Bebas Neue'; font-size:1.5rem; letter-spacing:0.05em;">R$ 0,00</span>
+          <span class="sys-label-dim" style="font-size:0.75rem;">AUTO</span>
         </div>
       </div>
 
@@ -235,21 +235,21 @@
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
           <label class="sys-label-dim">FORMAS DE PAGAMENTO</label>
           <button type="button" id="btn-add-forma" onclick="addPaymentRow()"
-                  style="background:transparent; border:1px solid var(--neon); color:var(--neon); font-family:'IBM Plex Mono'; font-size:0.6rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; padding:0.25rem 0.7rem; cursor:pointer; transition:all 0.12s;"
+                  style="background:transparent; border:1px solid var(--neon); color:var(--neon); font-family:'IBM Plex Mono'; font-size:0.75rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; padding:0.3rem 0.8rem; cursor:pointer; transition:all 0.12s;"
                   onmouseover="this.style.background='rgba(0,255,102,0.1)'"
                   onmouseout="this.style.background='transparent'">
             + ADICIONAR FORMA
           </button>
         </div>
         <div id="payment-rows" style="display:flex; flex-direction:column; gap:0.4rem;"></div>
-        <div id="payment-error" style="display:none; margin-top:0.35rem; font-size:0.62rem; color:var(--danger); font-family:'IBM Plex Mono'; letter-spacing:0.05em;"></div>
+        <div id="payment-error" style="display:none; margin-top:0.35rem; font-size:0.78rem; color:var(--danger); font-family:'IBM Plex Mono'; letter-spacing:0.05em;"></div>
       </div>
 
     </div>
 
     <!-- Submit row -->
     <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--bd); padding-top: 1rem;">
-      <button type="submit" id="btn-nova-venda" class="btn btn-primary" style="font-size: 0.78rem; padding: 0.7rem 2rem;">
+      <button type="submit" id="btn-nova-venda" class="btn btn-primary" style="font-size: 0.88rem; padding: 0.75rem 2.2rem;">
         + LANÇAR VENDA
       </button>
     </div>
@@ -263,7 +263,7 @@
 ══════════════════════════════════════════════════════════ -->
 <div class="card fade-in" style="animation-delay: 0.08s;">
   <div class="section-header">
-    <span class="display" style="font-size: 1.1rem; letter-spacing: 0.08em; color: var(--txt);">VENDAS LANÇADAS</span>
+    <span class="display" style="font-size: 1.35rem; letter-spacing: 0.08em; color: var(--txt);">VENDAS LANÇADAS</span>
     <span class="sys-label-dim" style="margin-left: auto;">{{ vendas|length }} REGISTRO{% if vendas|length != 1 %}S{% endif %}</span>
   </div>
 
@@ -286,20 +286,20 @@
       <tbody>
         {% for v in vendas %}
         <tr>
-          <td class="money-dim" style="font-size: 0.7rem; padding-right: 0.5rem;">{{ "%02d"|format(loop.index) }}</td>
-          <td style="font-weight: 600; color: var(--txt); font-size: 0.85rem; text-align: center;">{{ v.num_pessoas }}</td>
-          <td style="color: var(--dim); font-size: 0.75rem;">{{ v.canal_venda or '—' }}</td>
-          <td style="color: var(--dim); font-size: 0.72rem;">{{ v.cidade_origem or '—' }}</td>
-          <td style="color: var(--dim); font-size: 0.72rem;">{{ v.fotografo or '—' }}</td>
-          <td style="color: var(--dim); font-size: 0.72rem;">{{ v.vendedor or '—' }}</td>
+          <td class="money-dim" style="font-size: 0.85rem; padding-right: 0.5rem;">{{ "%02d"|format(loop.index) }}</td>
+          <td style="font-weight: 600; color: var(--txt); font-size: 0.95rem; text-align: center;">{{ v.num_pessoas }}</td>
+          <td style="color: var(--dim); font-size: 0.88rem;">{{ v.canal_venda or '—' }}</td>
+          <td style="color: var(--dim); font-size: 0.88rem;">{{ v.cidade_origem or '—' }}</td>
+          <td style="color: var(--dim); font-size: 0.88rem;">{{ v.fotografo or '—' }}</td>
+          <td style="color: var(--dim); font-size: 0.88rem;">{{ v.vendedor or '—' }}</td>
           <td style="text-align: right;">
-            <span class="money" style="font-size: 0.85rem;">R$ {{ "%.2f"|format(v.valor_venda) | replace('.', ',') }}</span>
+            <span class="money" style="font-size: 0.95rem;">R$ {{ "%.2f"|format(v.valor_venda) | replace('.', ',') }}</span>
           </td>
           <td style="text-align: center;">
             {% if v.forma_pagamento == 'MIX' and v.pagamentos %}
               <div style="display:flex; flex-wrap:wrap; gap:0.2rem; justify-content:center;">
                 {% for p in v.pagamentos %}
-                  <span class="badge badge-{{ p.forma_pagamento|lower }}" style="font-size:0.58rem; padding:0.1rem 0.35rem;">{{ p.forma_pagamento }}</span>
+                  <span class="badge badge-{{ p.forma_pagamento|lower }}" style="font-size:0.75rem; padding:0.1rem 0.35rem;">{{ p.forma_pagamento }}</span>
                 {% endfor %}
               </div>
             {% else %}
@@ -310,14 +310,14 @@
             <div style="display:flex; gap:0.3rem; justify-content:flex-end; align-items:center;">
               <button type="button" class="btn"
                       onclick="openEditModal({{ v.id }}, '{{ data }}')"
-                      style="font-size:0.6rem; padding:0.25rem 0.6rem; background:transparent; border:1px solid rgba(204,255,0,0.45); color:var(--acid); transition:all 0.12s;"
+                      style="font-size:0.75rem; padding:0.25rem 0.6rem; background:transparent; border:1px solid rgba(204,255,0,0.45); color:var(--acid); transition:all 0.12s;"
                       onmouseover="this.style.background='rgba(204,255,0,0.08)'"
                       onmouseout="this.style.background='transparent'">
                 EDT
               </button>
               <form action="/dia/{{ data }}/venda/{{ v.id }}/excluir" method="POST"
                     onsubmit="return confirm('CONFIRMAR EXCLUSÃO DA VENDA #{{ loop.index }}?');">
-                <button type="submit" class="btn btn-danger" style="font-size: 0.6rem; padding: 0.25rem 0.6rem;">
+                <button type="submit" class="btn btn-danger" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">
                   DEL
                 </button>
               </form>
@@ -328,9 +328,9 @@
       </tbody>
       <tfoot>
         <tr style="background: var(--s2);">
-          <td colspan="7" style="font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--dim);">TOTAL GERAL DO DIA</td>
+          <td colspan="7" style="font-size: 0.85rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--dim);">TOTAL GERAL DO DIA</td>
           <td style="text-align: right;">
-            <span class="money" style="font-size: 1.1rem; font-family: 'Bebas Neue'; letter-spacing: 0.05em;">R$ {{ "%.2f"|format(total_dia) | replace('.', ',') }}</span>
+            <span class="money" style="font-size: 1.5rem; font-family: 'Bebas Neue'; letter-spacing: 0.05em;">R$ {{ "%.2f"|format(total_dia) | replace('.', ',') }}</span>
           </td>
           <td colspan="2"></td>
         </tr>
@@ -342,14 +342,14 @@
   <div style="padding: 1rem 1.25rem; background: var(--s2); border-top: 1px solid var(--bd); display: flex; align-items: center; justify-content: space-between;">
     <div class="sys-label-dim">COMPARTILHAR RELATÓRIO COMPLETO</div>
     {% if whatsapp_numero %}
-      <button type="button" onclick="abrirWhatsApp('{{ data }}')" class="btn btn-wa" style="font-size: 0.72rem; padding: 0.55rem 1.5rem;">
+      <button type="button" onclick="abrirWhatsApp('{{ data }}')" class="btn btn-wa" style="font-size: 0.85rem; padding: 0.55rem 1.5rem;">
         <svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;flex-shrink:0;" fill="currentColor" viewBox="0 0 24 24">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
         </svg>
         ENVIAR RELATÓRIO VIA WHATSAPP
       </button>
     {% else %}
-      <a href="/admin" class="btn btn-ghost" style="font-size: 0.65rem; border-color: var(--muted); color: var(--dim);">
+      <a href="/admin" class="btn btn-ghost" style="font-size: 0.8rem; border-color: var(--muted); color: var(--dim);">
         ⚠ CONFIGURAR NÚMERO WHATSAPP NO ADMIN
       </a>
     {% endif %}
@@ -374,7 +374,7 @@
 ══════════════════════════════════════════════════════════ -->
 <div class="card fade-in" style="animation-delay: 0.12s; margin-bottom: 1.5rem; border-left: 3px solid var(--warn);">
   <div class="section-header">
-    <span class="display" style="font-size: 1.1rem; letter-spacing: 0.08em; color: var(--warn);">RETIRADAS DE CAIXA</span>
+    <span class="display" style="font-size: 1.35rem; letter-spacing: 0.08em; color: var(--warn);">RETIRADAS DE CAIXA</span>
     <span class="sys-label-dim" style="margin-left: auto;">{{ retiradas|length }} REGISTRO{% if retiradas|length != 1 %}S{% endif %}</span>
   </div>
 
@@ -544,7 +544,7 @@
     // Select forma
     const sel = document.createElement('select');
     sel.name = 'forma_pagamento_' + idx;
-    sel.style.cssText = 'font-family:"IBM Plex Mono"; font-size:0.75rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; background:var(--s2); border:1px solid var(--bd); color:var(--txt); padding:0.45rem 0.5rem; cursor:pointer; min-width:72px;';
+    sel.style.cssText = 'font-family:"IBM Plex Mono"; font-size:0.85rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; background:var(--s2); border:1px solid var(--bd); color:var(--txt); padding:0.55rem 0.7rem; cursor:pointer; min-width:85px;';
     FORMAS.forEach(f => {
       const opt = document.createElement('option');
       opt.value = f;
@@ -568,7 +568,7 @@
     rmBtn.type = 'button';
     rmBtn.innerHTML = '×';
     rmBtn.title = 'Remover forma';
-    rmBtn.style.cssText = 'background:transparent; border:1px solid var(--danger); color:var(--danger); font-family:"IBM Plex Mono"; font-size:0.9rem; font-weight:700; width:30px; height:30px; cursor:pointer; flex-shrink:0; line-height:1; transition:all 0.1s;';
+    rmBtn.style.cssText = 'background:transparent; border:1px solid var(--danger); color:var(--danger); font-family:"IBM Plex Mono"; font-size:1.1rem; font-weight:700; width:34px; height:34px; cursor:pointer; flex-shrink:0; line-height:1; transition:all 0.1s;';
     rmBtn.onmouseover = () => { rmBtn.style.background='rgba(255,59,48,0.12)'; };
     rmBtn.onmouseout  = () => { rmBtn.style.background='transparent'; };
     rmBtn.onclick = () => { row.remove(); recalcTotal(); };
@@ -757,8 +757,8 @@
             <label class="sys-label-dim" style="display:block; margin-bottom:0.35rem;">VALOR TOTAL</label>
             <div id="edit-valor-total" class="input-field money"
                  style="display:flex; align-items:center; justify-content:space-between; cursor:default; background:rgba(0,255,102,0.04);">
-              <span id="edit-valor-total-txt" style="color:var(--neon); font-family:'Bebas Neue'; font-size:1.1rem; letter-spacing:0.05em;">R$ 0,00</span>
-              <span class="sys-label-dim" style="font-size:0.55rem;">AUTO</span>
+              <span id="edit-valor-total-txt" style="color:var(--neon); font-family:'Bebas Neue'; font-size:1.5rem; letter-spacing:0.05em;">R$ 0,00</span>
+              <span class="sys-label-dim" style="font-size:0.75rem;">AUTO</span>
             </div>
           </div>
         </div>
@@ -768,7 +768,7 @@
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
             <label class="sys-label-dim">FORMAS DE PAGAMENTO</label>
             <button type="button" onclick="addModalPaymentRow()"
-                    style="background:transparent; border:1px solid var(--neon); color:var(--neon); font-family:'IBM Plex Mono'; font-size:0.6rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; padding:0.25rem 0.7rem; cursor:pointer;">
+                    style="background:transparent; border:1px solid var(--neon); color:var(--neon); font-family:'IBM Plex Mono'; font-size:0.75rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; padding:0.3rem 0.8rem; cursor:pointer;">
               + ADICIONAR FORMA
             </button>
           </div>
@@ -778,10 +778,10 @@
         <!-- Actions -->
         <div style="display:flex; justify-content:flex-end; gap:0.75rem; border-top:1px solid var(--bd); padding-top:1rem;">
           <button type="button" onclick="closeEditModal()" class="btn btn-ghost"
-                  style="font-size:0.72rem; padding:0.6rem 1.5rem; border-color:var(--muted); color:var(--muted);">
+                  style="font-size:0.82rem; padding:0.6rem 1.5rem; border-color:var(--muted); color:var(--muted);">
             CANCELAR
           </button>
-          <button type="submit" class="btn btn-primary" style="font-size:0.75rem; padding:0.65rem 2rem;">
+          <button type="submit" class="btn btn-primary" style="font-size:0.85rem; padding:0.65rem 2rem;">
             ✓ SALVAR ALTERAÇÕES
           </button>
         </div>
@@ -805,7 +805,7 @@
 
     const sel = document.createElement('select');
     sel.name = 'forma_pagamento_' + idx;
-    sel.style.cssText = 'font-family:"IBM Plex Mono"; font-size:0.75rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; background:var(--s2); border:1px solid var(--bd); color:var(--txt); padding:0.45rem 0.5rem; cursor:pointer; min-width:72px;';
+    sel.style.cssText = 'font-family:"IBM Plex Mono"; font-size:0.85rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; background:var(--s2); border:1px solid var(--bd); color:var(--txt); padding:0.55rem 0.7rem; cursor:pointer; min-width:85px;';
     FORMAS.forEach(f => {
       const opt = document.createElement('option');
       opt.value = f;
@@ -837,7 +837,7 @@
     const rmBtn = document.createElement('button');
     rmBtn.type = 'button';
     rmBtn.innerHTML = '×';
-    rmBtn.style.cssText = 'background:transparent; border:1px solid var(--danger); color:var(--danger); font-family:"IBM Plex Mono"; font-size:0.9rem; font-weight:700; width:30px; height:30px; cursor:pointer; flex-shrink:0; line-height:1;';
+    rmBtn.style.cssText = 'background:transparent; border:1px solid var(--danger); color:var(--danger); font-family:"IBM Plex Mono"; font-size:1.1rem; font-weight:700; width:34px; height:34px; cursor:pointer; flex-shrink:0; line-height:1;';
     rmBtn.onmouseover = () => { rmBtn.style.background='rgba(255,59,48,0.12)'; };
     rmBtn.onmouseout  = () => { rmBtn.style.background='transparent'; };
     rmBtn.onclick = () => { row.remove(); recalcModalTotal(); };

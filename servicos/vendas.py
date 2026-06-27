@@ -72,7 +72,7 @@ def parse_pagamentos_do_form() -> list[dict]:
             break
         forma = flask_request.form.get(forma_key, "DIN").strip().upper()
         valor = parse_money(flask_request.form.get(valor_key, "0").strip())
-        if forma in FORMAS_VALIDAS and valor > 0:
+        if forma in FORMAS_VALIDAS and valor >= 0:
             pagamentos.append({"forma": forma, "valor": valor})
         i += 1
 
@@ -81,8 +81,16 @@ def parse_pagamentos_do_form() -> list[dict]:
         forma = flask_request.form.get("forma_pagamento", "DIN").strip().upper()
         valor_raw = flask_request.form.get("valor_venda", "0").strip()
         valor = parse_money(valor_raw)
-        if valor > 0:
+        if valor >= 0:
             pagamentos.append({"forma": forma, "valor": valor})
+
+    # Filtragem: se houver alguma forma com valor > 0, removemos as zeradas.
+    # Caso contrário (toda a venda é zerada), mantemos apenas a primeira.
+    positives = [p for p in pagamentos if p["valor"] > 0]
+    if positives:
+        pagamentos = positives
+    elif pagamentos:
+        pagamentos = [pagamentos[0]]
 
     return pagamentos
 

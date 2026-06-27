@@ -31,9 +31,9 @@
                    border: 1px solid {% if loop.first %}var(--neon){% else %}var(--bd){% endif %};
                    border-bottom: 2px solid {% if loop.first %}var(--s1){% else %}transparent{% endif %};
                    color: {% if loop.first %}var(--neon){% else %}var(--dim){% endif %};
-                   font-family: 'IBM Plex Mono'; font-size: 0.65rem; font-weight: 700;
+                   font-family: 'IBM Plex Mono'; font-size: 0.82rem; font-weight: 700;
                    letter-spacing: 0.12em; text-transform: uppercase;
-                   padding: 0.6rem 1.1rem; cursor: pointer;
+                   padding: 0.7rem 1.25rem; cursor: pointer;
                    transition: all 0.12s; margin-bottom: -2px;">
       {{ tab_label }}
     </button>
@@ -57,7 +57,7 @@
   <div style="padding: 1rem 1.25rem; background: var(--s2); border-bottom: 1px solid var(--bd);
               display: flex; flex-direction: column gap: 0.5rem;">
     <div class="section-header" style="padding: 0; border: none; background: transparent; margin-bottom: 0.75rem;">
-      <span class="display" style="font-size: 1.15rem; letter-spacing: 0.07em; color: var(--txt);">{{ tab_label }}</span>
+      <span class="display" style="font-size: 1.35rem; letter-spacing: 0.07em; color: var(--txt);">{{ tab_label }}</span>
       <span class="sys-label-dim" style="margin-left: auto;">{{ items|length }} ITEM{% if items|length != 1 %}NS{% endif %} CADASTRADO{% if items|length != 1 %}S{% endif %}</span>
     </div>
     <form action="/admin/add" method="POST" style="display: flex; gap: 0.5rem; align-items: flex-end;">
@@ -68,7 +68,7 @@
                class="input-field" placeholder="Digite e pressione ADICIONAR…"
                required autocomplete="off" />
       </div>
-      <button type="submit" class="btn btn-primary" style="height: 37px; padding: 0 1.5rem; font-size: 0.7rem; white-space: nowrap;">
+      <button type="submit" class="btn btn-primary" style="height: 42px; padding: 0 1.5rem; font-size: 0.85rem; white-space: nowrap;">
         + ADICIONAR
       </button>
     </form>
@@ -85,14 +85,14 @@
 
           <div style="display: flex; align-items: center; gap: 0.75rem;">
             <span style="width: 5px; height: 5px; border-radius: 50% !important; background: {{ accent_color }}; flex-shrink: 0;"></span>
-            <span style="font-family: 'IBM Plex Mono'; font-size: 0.82rem; color: var(--txt);">{{ item }}</span>
+            <span style="font-family: 'IBM Plex Mono'; font-size: 0.95rem; color: var(--txt);">{{ item }}</span>
           </div>
 
           <form action="/admin/delete" method="POST"
                 onsubmit="return confirm('REMOVER: {{ item }}?');">
             <input type="hidden" name="tipo" value="{{ tipo }}" />
             <input type="hidden" name="valor" value="{{ item }}" />
-            <button type="submit" class="btn btn-danger" style="font-size: 0.6rem;">
+            <button type="submit" class="btn btn-danger" style="font-size: 0.75rem;">
               DEL
             </button>
           </form>
@@ -101,9 +101,9 @@
     </div>
   {% else %}
     <div style="padding: 3.5rem 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; text-align: center;">
-      <div class="display" style="font-size: 4rem; color: var(--muted); letter-spacing: 0.05em;">EMPTY</div>
+      <div class="display" style="font-size: 5rem; color: var(--muted); letter-spacing: 0.05em;">EMPTY</div>
       <div class="sys-label-dim">NENHUM ITEM CADASTRADO NESTA LISTA</div>
-      <div style="font-size: 0.7rem; color: var(--muted); font-family: 'IBM Plex Mono';">
+      <div style="font-size: 0.85rem; color: var(--muted); font-family: 'IBM Plex Mono';">
         Use o formulário acima para adicionar o primeiro registro.
       </div>
     </div>
@@ -120,7 +120,7 @@
      style="border-top: 3px solid var(--wa);">
 
   <div class="section-header">
-    <span class="display" style="font-size: 1.15rem; letter-spacing: 0.07em; color: var(--txt);">CONFIGURAÇÕES DO SISTEMA</span>
+    <span class="display" style="font-size: 1.35rem; letter-spacing: 0.07em; color: var(--txt);">CONFIGURAÇÕES DO SISTEMA</span>
   </div>
 
   <!-- WhatsApp number config -->
@@ -130,7 +130,7 @@
 
       <div style="flex: 1; min-width: 260px;">
         <div class="sys-label-dim" style="margin-bottom: 0.3rem;">INTEGRAÇÃO WHATSAPP</div>
-        <div style="color: var(--txt); font-size: 0.82rem; font-family: 'IBM Plex Mono'; margin-bottom: 1.25rem; line-height: 1.7; color: var(--dim);">
+        <div style="color: var(--txt); font-size: 0.95rem; font-family: 'IBM Plex Mono'; margin-bottom: 1.25rem; line-height: 1.7; color: var(--dim);">
           Configure o número de destino para o envio do relatório diário via WhatsApp.<br/>
           Use o formato internacional com DDI: <span style="color: var(--neon);">5554999999999</span>
         </div>
@@ -138,17 +138,17 @@
         <form action="/admin/whatsapp" method="POST">
           <label class="sys-label-dim" style="display: block; margin-bottom: 0.35rem;">NÚMERO (DDI + DDD + NÚMERO)</label>
           <div style="display: flex; gap: 0.5rem; align-items: stretch;">
-            <div style="display: flex; align-items: center; padding: 0 0.75rem; background: #080808; border: 1px solid var(--bd); border-right: none; color: var(--dim); font-family: 'IBM Plex Mono'; font-size: 0.78rem;">
+            <div style="display: flex; align-items: center; padding: 0 0.75rem; background: #080808; border: 1px solid var(--bd); border-right: none; color: var(--dim); font-family: 'IBM Plex Mono'; font-size: 0.9rem;">
               +
             </div>
             <input type="tel" name="whatsapp_numero" id="input-wa-numero"
                    class="input-field"
-                   style="flex: 1; font-size: 0.9rem; letter-spacing: 0.06em; color: var(--wa);"
+                   style="flex: 1; font-size: 1.0rem; letter-spacing: 0.06em; color: var(--wa);"
                    placeholder="5554999999999"
                    value="{{ whatsapp_numero }}"
                    pattern="[0-9]+" title="Apenas números, sem espaços ou traços" />
             <button type="submit" class="btn btn-primary"
-                    style="padding: 0 1.5rem; font-size: 0.72rem; white-space: nowrap; background: var(--wa);"
+                    style="padding: 0 1.5rem; font-size: 0.85rem; white-space: nowrap; background: var(--wa);"
                     onmouseover="this.style.background='#1ebe59'; this.style.transform='translate(-2px,-2px)'; this.style.boxShadow='4px 4px 0 rgba(37,211,102,0.35)'"
                     onmouseout="this.style.background='var(--wa)'; this.style.transform=''; this.style.boxShadow=''">
               SALVAR
@@ -157,21 +157,21 @@
           {% if whatsapp_numero %}
             <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
               <span style="width: 6px; height: 6px; border-radius: 50% !important; background: var(--wa); box-shadow: 0 0 5px var(--wa); flex-shrink: 0;"></span>
-              <span style="font-family: 'IBM Plex Mono'; font-size: 0.7rem; color: var(--wa);">NÚMERO ATIVO: +{{ whatsapp_numero }}</span>
+              <span style="font-family: 'IBM Plex Mono'; font-size: 0.85rem; color: var(--wa);">NÚMERO ATIVO: +{{ whatsapp_numero }}</span>
             </div>
           {% else %}
             <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
               <span style="width: 6px; height: 6px; border-radius: 50% !important; background: var(--danger); flex-shrink: 0;"></span>
-              <span style="font-family: 'IBM Plex Mono'; font-size: 0.7rem; color: var(--dim);">NENHUM NÚMERO CONFIGURADO</span>
+              <span style="font-family: 'IBM Plex Mono'; font-size: 0.85rem; color: var(--dim);">NENHUM NÚMERO CONFIGURADO</span>
             </div>
           {% endif %}
         </form>
       </div>
 
       <!-- Preview box -->
-      <div style="flex: 0 0 280px; background: #080808; border: 1px solid var(--bd); padding: 1rem;">
+      <div style="flex: 0 0 320px; background: #080808; border: 1px solid var(--bd); padding: 1rem;">
         <div class="sys-label-dim" style="margin-bottom: 0.75rem;">PRÉVIA DO RELATÓRIO</div>
-        <div style="font-family: 'IBM Plex Mono'; font-size: 0.68rem; color: var(--dim); line-height: 1.9; white-space: pre; overflow: hidden;">╔══════════════════════╗
+        <div style="font-family: 'IBM Plex Mono'; font-size: 0.8rem; color: var(--dim); line-height: 1.9; white-space: pre; overflow: hidden;">╔══════════════════════╗
 ║  RELATÓRIO DE CAIXA  ║
 ╚══════════════════════╝
 
@@ -202,13 +202,13 @@
   <div style="padding: 1rem 1.25rem; background: var(--s2); display: flex; align-items: center; justify-content: space-between;">
     <div>
       <div class="sys-label-dim" style="margin-bottom: 0.2rem;">TESTE DE ENVIO</div>
-      <div style="font-size: 0.75rem; color: var(--dim); font-family: 'IBM Plex Mono';">
+      <div style="font-size: 0.88rem; color: var(--dim); font-family: 'IBM Plex Mono';">
         Abre o relatório do dia atual no WhatsApp
       </div>
     </div>
     <a href="/dia/{{ '' }}/whatsapp" id="link-teste-wa"
        target="_blank" class="btn"
-       style="background: var(--wa); color: #050505; padding: 0.5rem 1.25rem; font-family: 'IBM Plex Mono'; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+       style="background: var(--wa); color: #050505; padding: 0.55rem 1.4rem; font-family: 'IBM Plex Mono'; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
       <svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;" fill="currentColor" viewBox="0 0 24 24">
         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
       </svg>
